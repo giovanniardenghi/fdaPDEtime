@@ -86,7 +86,7 @@ void Assembler::operKernel(EOExpr<A> oper,const MeshHandler<ORDER,2,3>& mesh,
 	                     FiniteElement<Integrator, ORDER,2,3>& fe, SpMat& OpMat)
 {
 	Real eps = 2.2204e-016,
-		 tolerance = 10 * eps;
+			 tolerance = 10 * eps;
 	std::vector<coeff> triplets;
 
 
@@ -119,10 +119,36 @@ void Assembler::operKernel(EOExpr<A> oper,const MeshHandler<ORDER,2,3>& mesh,
 
   	UInt nnodes = mesh.num_nodes();
   	OpMat.resize(nnodes, nnodes);
-	OpMat.setFromTriplets(triplets.begin(),triplets.end());
-	OpMat.prune(tolerance);
+		OpMat.setFromTriplets(triplets.begin(),triplets.end());
+		OpMat.prune(tolerance);
 }
 
+template<UInt DEGREE, UInt ORDER_DERIVATIVE, typename Integrator, typename A>
+void Assembler::operKernel(EOExpr<A> oper, Spline<Integrator, DEGREE, ORDER_DERIVATIVE>& spline, SpMat& OpMat)
+{
+    UInt M = spline.num_knots()-DEGREE-1;
+  	OpMat.resize(M, M);
+
+    for (UInt i = 0; i < M; ++i)
+    {
+        for (UInt j = 0; j <= i; ++j)
+        {
+            Real s = 0;
+
+            for(UInt k = i; k <= j+DEGREE; ++k)
+            {
+                Real a = spline.getKnot(k);
+                Real b = spline.getKnot(k+1);
+
+                for (UInt l = 0; l < Integrator::NNODES; ++l)
+                    s += oper(spline, i, j, (b-a)/2*Integrator::NODES[l]+(b+a)/2) * Integrator::WEIGHTS[l] * (b-a)/2;
+            }
+
+         if(s!=0) OpMat.coeffRef(i,j) = s;
+         if(i!=j && s!=0) OpMat.coeffRef(j,i) = s;
+        }
+    }
+}
 
 
 template<UInt ORDER, typename Integrator>
