@@ -11,11 +11,13 @@
  * series of method for their access, so isolating the more the possible the specific
  * code for R/C++ data conversion.
 */
-class  RegressionData{
+class  RegressionDataTime{
 	private:
 
 		// Design matrix pointer and dimensions
 		std::vector<Point> locations_;
+		//Vector of the time locations
+		std::vector<Real> time_locations_;
 
 		VectorXr observations_;
 		std::vector<UInt> observations_indices_;
@@ -34,6 +36,7 @@ class  RegressionData{
 		//Other parameters
 		UInt order_;
 		std::vector<Real> lambda_;
+		std::vector<Real> lambdaT_;
 		UInt GCVmethod_;
 		UInt nrealizations_;      // Number of relizations for the stochastic estimation of GCV
 
@@ -52,14 +55,14 @@ class  RegressionData{
 		#endif
 
 	public:
-		
-		RegressionData(){};
+
+		RegressionDataTime(){};
 
 //! A basic version of the constructor.
 
 		/*!
 			It initializes the object storing the R given objects. This is the simplest of the two possible interfaces with R
-			\param Rlocations an R-matrix containing the location of the observations. 
+			\param Rlocations an R-matrix containing the location of the observations.
 			\param Robservations an R-vector containing the values of the observations.
 			\param Rorder an R-integer containing the order of the approximating basis.
 			\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
@@ -75,12 +78,12 @@ class  RegressionData{
 
 
 		#ifdef R_VERSION_
-		explicit RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rcovariates,
+		explicit RegressionDataTime(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rcovariates,
 								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod,
 								SEXP Rnrealizations);
 		#endif
 
-		explicit RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF);
+		explicit RegressionDataTime(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF);
 
 
 		void printObservations(std::ostream & out) const;
@@ -120,7 +123,7 @@ class  RegressionData{
 };
 
 
-class  RegressionDataElliptic:public RegressionData
+class  RegressionDataTimeElliptic:public RegressionDataTime
 {
 	private:
 		Eigen::Matrix<Real,2,2> K_;
@@ -131,7 +134,7 @@ class  RegressionDataElliptic:public RegressionData
 		//! A complete version of the constructor.
 		/*!
 			It initializes the object storing the R given objects. This is the simplest of the two possible interfaces with R
-			\param Rlocations an R-matrix containing the location of the observations. 
+			\param Rlocations an R-matrix containing the location of the observations.
 			\param Robservations an R-vector containing the values of the observations.
 			\param Rorder an R-integer containing the order of the approximating basis.
 			\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
@@ -148,12 +151,12 @@ class  RegressionDataElliptic:public RegressionData
 	        \param Rnrealizations the number of random points used in the stochastic computation of the dofs
 		*/
 		#ifdef R_VERSION_
-		explicit RegressionDataElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, 
+		explicit RegressionDataTimeElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK,
 				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues,
 				SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
 		#endif
 
-		explicit RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
+		explicit RegressionDataTimeElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
 										std::vector<Real> lambda, Eigen::Matrix<Real,2,2>& K,
 										Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
 										MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
@@ -164,7 +167,7 @@ class  RegressionDataElliptic:public RegressionData
 		inline Real const getC() const {return c_;}
 };
 
-class RegressionDataEllipticSpaceVarying:public RegressionData
+class RegressionDataTimeEllipticSpaceVarying:public RegressionDataTime
 {
 	private:
 		Diffusivity K_;
@@ -173,11 +176,11 @@ class RegressionDataEllipticSpaceVarying:public RegressionData
 		ForcingTerm u_;
 
 	public:
-		
+
 		//! A complete version of the constructor.
 		/*!
 			It initializes the object storing the R given objects. This is the simplest of the two possible interfaces with R
-			\param Rlocations an R-matrix containing the location of the observations. 
+			\param Rlocations an R-matrix containing the location of the observations.
 			\param Robservations an R-vector containing the values of the observations.
 			\param Rorder an R-integer containing the order of the approximating basis.
 			\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
@@ -193,16 +196,16 @@ class RegressionDataEllipticSpaceVarying:public RegressionData
 			\param DOF an R boolean indicating whether dofs of the model have to be computed or not
 	        \param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
 	        \param Rnrealizations the number of random points used in the stochastic computation of the dofs
-			
+
 		*/
 		#ifdef R_VERSION_
-		explicit RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda,
+		explicit RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda,
 				SEXP RK, SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices,
 				SEXP RBCValues, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations);
 		#endif
 
 
-		explicit RegressionDataEllipticSpaceVarying(std::vector<Point>& locations, VectorXr& observations,
+		explicit RegressionDataTimeEllipticSpaceVarying(std::vector<Point>& locations, VectorXr& observations,
 													UInt order, std::vector<Real> lambda,
 													const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
 													const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,

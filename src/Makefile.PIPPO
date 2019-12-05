@@ -22,7 +22,7 @@ mumps: #scotch
 
 library: scotch mumps
 	MAKEFLAGS="CC=${CC} CXX=${CXX}" &&\
-	R CMD SHLIB ${SRCS_SHLIB} -o fdaPDE.so
+	R CMD SHLIB ${SRCS_SHLIB} -o fdaPDEtime.so
 
 clean:
 	rm -f *.o

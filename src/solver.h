@@ -1,8 +1,12 @@
 #ifndef __SOLVER_HPP__
 #define __SOLVER_HPP__
 
-#include "fdaPDE.h"
+#define JOB_INIT -1
+#define JOB_END -2
+#define USE_COMM_WORLD -987654
 
+#include "fdaPDE.h"
+#include "../inst/include/dmumps_c.h"
 
 //!  A Linear System QR solver class
 /*!
@@ -41,7 +45,7 @@ class Symmetric{
 class Cholesky{
 	public:
 	static void solve(MatrixXr const & A, VectorXr const & b,VectorXr &x){x=A.ldlt().solve(b);};
-}; 
+};
 
 //!  A Linear System LU sparse solver class
 /*!
@@ -171,6 +175,80 @@ class BiCGSTABILUT{
 	};
 };
 
+
+class Mumps{
+	public:
+    static void solve(SpMat const & A, VectorXr const & b, VectorXr &x )
+	{
+
+		const Real *values = A.valuePtr();
+		const UInt *inner = A.innerIndexPtr();
+		const UInt *outer = A.outerIndexPtr();
+
+		UInt nz = A.nonZeros();
+		UInt n = A.cols();
+
+		UInt nzj;
+		UInt counter = 0;
+		UInt *jcn = new UInt[nz];
+
+		for(UInt i = 1; i <n+1; ++i)
+		{
+	  		nzj = outer[i]-outer[i-1];
+
+	  		for(UInt j=0;j<nzj;++j)
+			{
+			    jcn[counter+j] = i;
+			    //cout << jcn[counter+j] << " ";
+			}
+	  		counter+=nzj;
+		}
+
+		UInt *irn = new UInt[nz];
+
+		for(UInt i=0; i<nz; ++i)
+		{
+	    	irn[i]=inner[i]+1;
+	    	//cout << irn[i] << " ";
+		}
+
+		Real *a = new Real[nz];
+
+		for(UInt i=0; i<nz; ++i)
+		{
+	    	a[i]=values[i];
+	    	//cout << irn[i] << " ";
+		}
+
+	    DMUMPS_STRUC_C id;
+
+		//Real *rhs = b.array();
+        Real *rhs = new Real[n];
+        for(UInt i = 0; i < n; ++i) rhs[i] = b(i);
+
+	    /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
+	    id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
+	    dmumps_c(&id);
+	    /* Define the problem on the host */
+
+		id.n = n; id.nz =nz; id.irn=irn; id.jcn=jcn;
+		id.a = a; id.rhs = rhs;
+
+	    #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+	    /* No outputs */
+	    id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+	    /* Call the MUMPS package. */
+	    id.job=6;
+	    dmumps_c(&id);
+	    id.job=JOB_END; dmumps_c(&id); /* Terminate instance */
+
+		for(UInt i=0; i<n; ++i)
+		{
+	    	x(i)=rhs[i];
+		}
+
+     };
+};
 
 
 #endif

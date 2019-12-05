@@ -1,7 +1,7 @@
 #ifndef __REGRESSIONDATA_IMP_HPP__
 #define __REGRESSIONDATA_IMP_HPP__
 
-RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF):
+RegressionDataTime::RegressionDataTime(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF):
 					locations_(locations), observations_(observations), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
 					order_(order), lambda_(lambda), bc_values_(bc_values), bc_indices_(bc_indices), DOF_(DOF)
 {
@@ -17,27 +17,27 @@ RegressionData::RegressionData(std::vector<Point>& locations, VectorXr& observat
 	}
 }
 
-RegressionDataElliptic::RegressionDataElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
+RegressionDataTimeElliptic::RegressionDataTimeElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
 												std::vector<Real> lambda, Eigen::Matrix<Real,2,2>& K,
 												Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
 												MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
 												std::vector<Real>& bc_values, bool DOF):
-		 RegressionData(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c)
+		 RegressionDataTime(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c)
 {;}
 
-RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(std::vector<Point>& locations,
+RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(std::vector<Point>& locations,
 									VectorXr& observations, UInt order, std::vector<Real> lambda,
 									const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
 									const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,
 									const std::vector<Real>& c, const std::vector<Real>& u,
 									MatrixXr& covariates, MatrixXi& incidenceMatrix,
 									std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF):
-		RegressionData(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c), u_(u)
+		RegressionDataTime(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c), u_(u)
 {;}
 
 
 #ifdef R_VERSION_
-RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rcovariates,
+RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rcovariates,
 							SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod,
 							SEXP Rnrealizations)
 {
@@ -46,7 +46,7 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder,
 	setObservations(Robservations);
 	setCovariates(Rcovariates);
 	setNrealizations(Rnrealizations);
-	
+
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
 
 	order_ =  INTEGER(Rorder)[0];
@@ -62,9 +62,9 @@ RegressionData::RegressionData(SEXP Rlocations, SEXP Robservations, SEXP Rorder,
 
 }
 
-RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
+RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
 				 SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
-	RegressionData(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix,
+	RegressionDataTime(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix,
 					 			   RBCIndices, RBCValues, DOF,RGCVmethod, Rnrealizations)
 {
 	K_.resize(2, 2);
@@ -85,13 +85,13 @@ RegressionDataElliptic::RegressionDataElliptic(SEXP Rlocations, SEXP Robservatio
 	c_ =  REAL(Rc)[0];
 }
 
-RegressionDataEllipticSpaceVarying::RegressionDataEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
+RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
 				 SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
-					 RegressionData(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF,RGCVmethod, Rnrealizations),
+					 RegressionDataTime(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF,RGCVmethod, Rnrealizations),
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
 {;}
 
-void RegressionDataEllipticSpaceVarying::print(std::ostream & out) const
+void RegressionDataTimeEllipticSpaceVarying::print(std::ostream & out) const
 {
 	for (auto i=0;i<18;i++)
 		out<<K_(i);
@@ -101,7 +101,7 @@ void RegressionDataEllipticSpaceVarying::print(std::ostream & out) const
 		out<<c_(i);
 }
 
-void RegressionData::setObservations(SEXP Robservations)
+void RegressionDataTime::setObservations(SEXP Robservations)
 {
 	UInt n_obs_ = Rf_length(Robservations);
 	observations_.resize(n_obs_);
@@ -135,7 +135,7 @@ void RegressionData::setObservations(SEXP Robservations)
 	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
 }
 
-void RegressionData::setCovariates(SEXP Rcovariates)
+void RegressionDataTime::setCovariates(SEXP Rcovariates)
 {
 	n_ = INTEGER(Rf_getAttrib(Rcovariates, R_DimSymbol))[0];
 	p_ = INTEGER(Rf_getAttrib(Rcovariates, R_DimSymbol))[1];
@@ -151,7 +151,7 @@ void RegressionData::setCovariates(SEXP Rcovariates)
 	}
 }
 
-void RegressionData::setLocations(SEXP Rlocations)
+void RegressionDataTime::setLocations(SEXP Rlocations)
 {
 	n_ = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
 	if(n_>0){
@@ -171,11 +171,11 @@ void RegressionData::setLocations(SEXP Rlocations)
 	}
 }
 
-void RegressionData::setNrealizations(SEXP Rnrealizations) {
+void RegressionDataTime::setNrealizations(SEXP Rnrealizations) {
 	nrealizations_ = INTEGER(Rnrealizations)[0];
 }
 
-void RegressionData::setIncidenceMatrix(SEXP RincidenceMatrix)
+void RegressionDataTime::setIncidenceMatrix(SEXP RincidenceMatrix)
 {
 	nRegions_ = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[0];
 	UInt p = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[1];
@@ -193,7 +193,7 @@ void RegressionData::setIncidenceMatrix(SEXP RincidenceMatrix)
 
 #endif
 
-void RegressionData::printObservations(std::ostream & out) const
+void RegressionDataTime::printObservations(std::ostream & out) const
 {
 
 	for(auto i=0;i<observations_.size(); i++)
@@ -202,7 +202,7 @@ void RegressionData::printObservations(std::ostream & out) const
 	}
 }
 
-void RegressionData::printCovariates(std::ostream & out) const
+void RegressionDataTime::printCovariates(std::ostream & out) const
 {
 
 	for(auto i=0;i<covariates_.rows(); i++)
@@ -215,7 +215,7 @@ void RegressionData::printCovariates(std::ostream & out) const
 	}
 }
 
-void RegressionData::printLocations(std::ostream & out) const
+void RegressionDataTime::printLocations(std::ostream & out) const
 {
 
 	for(std::vector<Point>::size_type i=0;i<locations_.size(); i++)
@@ -225,7 +225,7 @@ void RegressionData::printLocations(std::ostream & out) const
 	}
 }
 
-void RegressionData::printIncidenceMatrix(std::ostream & out) const
+void RegressionDataTime::printIncidenceMatrix(std::ostream & out) const
 {
 	for (auto i=0; i<incidenceMatrix_.rows(); i++)
 	{
