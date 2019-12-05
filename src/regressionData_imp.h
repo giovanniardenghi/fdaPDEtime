@@ -1,9 +1,9 @@
 #ifndef __REGRESSIONDATA_IMP_HPP__
 #define __REGRESSIONDATA_IMP_HPP__
 
-RegressionDataTime::RegressionDataTime(std::vector<Point>& locations, VectorXr& observations, UInt order, std::vector<Real> lambda, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF):
-					locations_(locations), observations_(observations), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
-					order_(order), lambda_(lambda), bc_values_(bc_values), bc_indices_(bc_indices), DOF_(DOF)
+RegressionDataTime::RegressionDataTime(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order, std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF):
+					locations_(locations), time_locations_(time_locations), observations_(observations), covariates_(covariates), incidenceMatrix_(incidenceMatrix),
+					order_(order), lambdaS_(lambdaS), lambdaT_(lambdaT), bc_values_(bc_values), bc_indices_(bc_indices), ic_(ic), flag_mass_(flag_mass), flag_parabolic_(flag_parabolic), DOF_(DOF)
 {
 	nRegions_ = incidenceMatrix_.rows();
 	if(locations_.size()==0 && nRegions_==0)
@@ -17,31 +17,34 @@ RegressionDataTime::RegressionDataTime(std::vector<Point>& locations, VectorXr& 
 	}
 }
 
-RegressionDataTimeElliptic::RegressionDataTimeElliptic(std::vector<Point>& locations, VectorXr& observations, UInt order,
-												std::vector<Real> lambda, Eigen::Matrix<Real,2,2>& K,
+RegressionDataTimeElliptic::RegressionDataTimeElliptic(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
+												std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, Eigen::Matrix<Real,2,2>& K,
 												Eigen::Matrix<Real,2,1>& beta, Real c, MatrixXr& covariates,
 												MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,
-												std::vector<Real>& bc_values, bool DOF):
-		 RegressionDataTime(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c)
+												std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF):
+		 RegressionDataTime(locations, time_locations, observations, order, lambdaS, lambdaT, covariates, incidenceMatrix, bc_indices, bc_values, ic, flag_mass, flag_parabolic, DOF),
+		 										K_(K), beta_(beta), c_(c)
 {;}
 
-RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(std::vector<Point>& locations,
-									VectorXr& observations, UInt order, std::vector<Real> lambda,
+RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
+												std::vector<Real>& lambdaS, std::vector<Real>& lambdaT,
 									const std::vector<Eigen::Matrix<Real,2,2>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,2> > >& K,
 									const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,
 									const std::vector<Real>& c, const std::vector<Real>& u,
 									MatrixXr& covariates, MatrixXi& incidenceMatrix,
-									std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, bool DOF):
-		RegressionDataTime(locations, observations, order, lambda, covariates, incidenceMatrix, bc_indices, bc_values, DOF), K_(K), beta_(beta), c_(c), u_(u)
+									std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF):
+		 RegressionDataTime(locations, time_locations, observations, order, lambdaS, lambdaT, covariates, incidenceMatrix, bc_indices, bc_values, ic, flag_mass, flag_parabolic, DOF),
+											K_(K), beta_(beta), c_(c), u_(u)
 {;}
 
 
 #ifdef R_VERSION_
-RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP Rcovariates,
-							SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod,
-							SEXP Rnrealizations)
+RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
+						SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod,
+						SEXP Rnrealizations)
 {
 	setLocations(Rlocations);
+	setTimeLocations(Rtime_locations);
 	setIncidenceMatrix(RincidenceMatrix);
 	setObservations(Robservations);
 	setCovariates(Rcovariates);
@@ -50,6 +53,9 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Robservations, SEXP
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
 
 	order_ =  INTEGER(Rorder)[0];
+	flag_mass_ = LOGICAL(Rflag_mass)[0];
+	flag_parabolic_ = LOGICAL(Rflag_parabolic)[0];
+
 	DOF_ = INTEGER(DOF)[0];
 	UInt length_indexes = Rf_length(RBCIndices);
 
@@ -57,15 +63,21 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Robservations, SEXP
 
 	bc_values_.assign(REAL(RBCValues),REAL(RBCValues) + Rf_length(RBCIndices));
 
-    UInt length_lambda = Rf_length(Rlambda);
-    for (UInt i = 0; i<length_lambda; ++i)  lambda_.push_back(REAL(Rlambda)[i]);
+	UInt length_lambdaS = Rf_length(RlambdaS);
+	for (UInt i = 0; i<length_lambdaS; ++i)  lambdaS_.push_back(REAL(RlambdaS)[i]);
+
+	UInt length_lambdaT = Rf_length(RlambdaT);
+	for (UInt i = 0; i<length_lambdaT; ++i)  lambdaT_.push_back(REAL(RlambdaT)[i]);
+
+	UInt length_ic = Rf_length(Ric);
+	ic_.resize(length_ic);
+	for (UInt i = 0; i<length_ic; ++i)  ic_[i]=REAL(Ric)[i];
 
 }
 
-RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
-				 SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
-	RegressionDataTime(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix,
-					 			   RBCIndices, RBCValues, DOF,RGCVmethod, Rnrealizations)
+RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
+		SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,	SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations):
+	RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, Rnrealizations)
 {
 	K_.resize(2, 2);
 	for(auto i=0; i<2; ++i)
@@ -85,21 +97,11 @@ RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rob
 	c_ =  REAL(Rc)[0];
 }
 
-RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Robservations, SEXP Rorder, SEXP Rlambda, SEXP RK, SEXP Rbeta,
-				 SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
-					 RegressionDataTime(Rlocations, Robservations, Rorder, Rlambda, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, DOF,RGCVmethod, Rnrealizations),
+RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
+		SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
+					 RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, Rnrealizations),
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
 {;}
-
-void RegressionDataTimeEllipticSpaceVarying::print(std::ostream & out) const
-{
-	for (auto i=0;i<18;i++)
-		out<<K_(i);
-	for (auto i=0;i<18;i++)
-		out<<beta_(i);
-	for (auto i=0;i<18;i++)
-		out<<c_(i);
-}
 
 void RegressionDataTime::setObservations(SEXP Robservations)
 {
@@ -115,12 +117,14 @@ void RegressionDataTime::setObservations(SEXP Robservations)
 		{
 			if(!ISNA(REAL(Robservations)[i]))
 			{
-				observations_[count] = REAL(Robservations)[i];
-				count++;
+				observations_[i] = REAL(Robservations)[i];
 				observations_indices_.push_back(i);
 			}
+			else
+			{
+				observations_[i] = 0.0;
+			}
 		}
-		observations_.conservativeResize(count, Eigen::NoChange);
 	}
 	else // locations_.size() > 0 NOR nRegions_ > 0
 	{
@@ -168,6 +172,17 @@ void RegressionDataTime::setLocations(SEXP Rlocations)
 				locations_.emplace_back(REAL(Rlocations)[i+ n_*0],REAL(Rlocations)[i+ n_*1],REAL(Rlocations)[i+ n_*2]);
 			}
 		}
+	}
+}
+
+void RegressionDataTime::setTimeLocations(SEXP Rtime_locations)
+{
+	UInt n_time_loc_ = Rf_length(Rtime_locations);
+  time_locations_.resize(n_time_loc_);
+
+	for(auto i=0;i<n_time_loc_;++i)
+	{
+		time_locations_[i] = REAL(Rtime_locations)[i];
 	}
 }
 
