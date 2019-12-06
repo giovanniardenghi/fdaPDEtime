@@ -106,6 +106,8 @@ class  RegressionDataTime{
 		inline MatrixXi const & getIncidenceMatrix() const {return incidenceMatrix_;}
 		//! A method returning the number of observations
 		inline UInt const getNumberofObservations() const {return observations_.size();}
+		//! A method returning the number of space observations
+		inline UInt const getNumberofSpaceObservations() const {return observations_.size()/time_locations_.size();}
 		//! A method returning the number of time observations
 		inline UInt const getNumberofTimeObservations() const {return time_locations_.size();}
 		//! A method returning the locations of the observations
