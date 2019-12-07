@@ -27,7 +27,8 @@ class MixedFERegressionBase
 		SpMat psi_; //! Psi matrix of the model
 		VectorXr A_;	//A_.asDiagonal() = diag(|A_1|,...,|A_N|) areal matrix
 
-		bool isSpaceVarying=false; // used to distinguish whether to use the forcing term u in apply() or not
+		VectorXr forcingTerm_;
+
 		void setPsi(); 	//! A member function computing the Psi matrix
 		void setA();
 
@@ -37,9 +38,8 @@ class MixedFERegressionBase
 		SpMat const & getPsi() const {return psi_;}
 		SpMat const & getR0() const {return R0_;}
 		SpMat const & getR1() const {return R1_;}
-		SpMat const & getA() const {return A_;}
-
-		bool const isSV() const {return isSpaceVarying;}
+		VectorXr const & getA() const {return A_;}
+		VectorXr const & getForcingTerm() const {return forcingTerm_;}
 
 		template<typename A>
 		void buildSpaceMatrices(EOExpr<A> oper, const ForcingTerm & u);
@@ -146,7 +146,8 @@ class SpaceTimeRegression
 	MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	MatrixXr H_; //! The hat matrix of the regression
 
-	VectorXr rhs_ic_correction;	//!Initial condition correction (parabolic case)
+	VectorXr rhs_ft_correction_;	//! right hand side correction for the forcing term:
+	VectorXr rhs_ic_correction_;	//!Initial condition correction (parabolic case)
 	VectorXr _rightHandSide;         //!A Eigen::VectorXr: Stores the system right hand side.
 	MatrixXv _solution; //!A Eigen::VectorXr: Stores the system solution.
 	MatrixXr _dof;          //! A Eigen::MatrixXr storing the computed dofs
@@ -160,6 +161,8 @@ class SpaceTimeRegression
 	MatrixXr LeftMultiplybyQ(const MatrixXr& u);
 	//! A function which adds Dirichlet boundary conditions before solving the system ( Remark: BC for areal data are not implemented!)
 	void addDirichletBC();
+	//! A function which takes care of missing values in the final system
+	void addNA();
 	//! A member function which builds the Q matrix
 	void setQ();
 	//! A member function which builds the H matrix
@@ -172,11 +175,11 @@ class SpaceTimeRegression
 	//! A member function which builds all the matrices needed for assembling matrixNoCov_
 	void buildMatrices();
 	//! A member function computing the dofs
-	void computeDegreesOfFreedom(UInt output_index, Real lambda);
-	//! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
-	void computeDegreesOfFreedomExact(UInt output_index, Real lambda);
-	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
-	void computeDegreesOfFreedomStochastic(UInt output_index, Real lambda);
+	// void computeDegreesOfFreedom(UInt output_index, Real lambda);
+	// //! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
+	// void computeDegreesOfFreedomExact(UInt output_index, Real lambda);
+	// //! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
+	// void computeDegreesOfFreedomStochastic(UInt output_index, Real lambda);
 
 	  //! A function to factorize the system, using Woodbury decomposition when there are covariates
 	void system_factorize();
@@ -195,9 +198,9 @@ public:
 	void apply();
 
 	//! A inline member that returns a VectorXr, returns the whole solution_.
-	inline std::vector<VectorXr> const & getSolution() const{return _solution;}
+	MatrixXv const & getSolution() const{return _solution;}
 	//! A function returning the computed dofs of the model
-	inline std::vector<Real> const & getDOF() const{return _dof;}
+	MatrixXr const & getDOF() const{return _dof;}
 };
 
 
@@ -205,6 +208,6 @@ public:
 
 
 #include "mixedFERegression_imp.h"
-#include "timeRegression_imp.h"
+// #include "timeRegression_imp.h"s
 
 #endif

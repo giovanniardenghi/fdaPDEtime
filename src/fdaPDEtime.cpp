@@ -28,8 +28,8 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 
 	regression.apply();
 
-	MatrixXv& solution = regression.getSolution();
-	MatrixXr& dof = regression.getDOF();
+	MatrixXv const & solution = regression.getSolution();
+	MatrixXr const & dof = regression.getDOF();
 
 	//Copy result in R memory
 	SEXP result = NILSXP;

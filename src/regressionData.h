@@ -60,6 +60,9 @@ class  RegressionDataTime{
 		void setIncidenceMatrix(SEXP RincidenceMatrix);
 		#endif
 
+	protected:
+		bool isSpaceVarying=false; // used to distinguish whether to use the forcing term u in apply() or not
+
 	public:
 
 		RegressionDataTime(){};
@@ -141,6 +144,8 @@ class  RegressionDataTime{
 		inline UInt const & getGCVmethod() const {return GCVmethod_;}
 		//! A method returning the number of vectors to use to stochastically estimate the edf
 		inline UInt const & getNrealizations() const {return nrealizations_;}
+		//! A method returning whether the PDE coefficients are space varying or not
+		bool const isSV() const {return isSpaceVarying;}
 };
 
 

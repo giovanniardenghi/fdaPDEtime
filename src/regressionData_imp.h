@@ -101,7 +101,7 @@ RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(S
 		SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
 					 RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, Rnrealizations),
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
-{;}
+{this->isSpaceVarying=TRUE;}
 
 void RegressionDataTime::setObservations(SEXP Robservations)
 {
