@@ -21,6 +21,7 @@ class  RegressionDataTime{
 
 		VectorXr observations_;
 		std::vector<UInt> observations_indices_;
+		std::vector<UInt> observations_na_;
 		bool locations_by_nodes_;
 
 
@@ -119,6 +120,7 @@ class  RegressionDataTime{
 		inline bool isLocationsByNodes() const {return locations_by_nodes_;}
 		inline bool computeDOF() const {return DOF_;}
 		inline std::vector<UInt> const & getObservationsIndices() const {return observations_indices_;}
+		inline std::vector<UInt> const & getObservationsNA() const {return observations_na_;}
 		//! A method returning the the space penalization term
 		inline std::vector<Real> const & getLambdaS() const {return lambdaS_;}
 		//! A method returning the the time penalization term

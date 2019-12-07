@@ -42,10 +42,10 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 	bool fast;
 
 	coef  = REAL(Rcoef);
-    order = INTEGER(Rorder)[0];
-    fast  = INTEGER(Rfast)[0];
-    mydim = INTEGER(Rmydim)[0];
-    ndim  = INTEGER(Rndim)[0];
+  order = INTEGER(Rorder)[0];
+  fast  = INTEGER(Rfast)[0];
+  mydim = INTEGER(Rmydim)[0];
+  ndim  = INTEGER(Rndim)[0];
 
 	X = (double*) malloc(sizeof(double)*n_X);
 	Y = (double*) malloc(sizeof(double)*n_X);
@@ -103,7 +103,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==1 && mydim==2 && ndim==3)
-		{ 
+		{
 			MeshHandler<1,2,3> mesh(Rmesh);
 			//mesh.printTriangles(std::cout);
 			//mesh.printPoints(std::cout);
@@ -117,7 +117,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==1 && mydim==3 && ndim==3)
-		{ 
+		{
 			MeshHandler<1,3,3> mesh(Rmesh);
 			//mesh.printTriangles(std::cout);
 			//mesh.printPoints(std::cout);
@@ -149,7 +149,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 			evaluator.integrate(incidenceMatrix, nRegions, nElements, coef, REAL(result));
 		}
 		else if(order==1 && mydim==2 && ndim==3)
-		{ 
+		{
 			MeshHandler<1,2,3> mesh(Rmesh);
 			Evaluator<1,2,3> evaluator(mesh);
 			evaluator.integrate(incidenceMatrix, nRegions, nElements, coef, REAL(result));
@@ -161,7 +161,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 			evaluator.integrate(incidenceMatrix, nRegions, nElements, coef, REAL(result));
 		}
 		else if(order==1 && mydim==3 && ndim==3)
-		{ 
+		{
 			MeshHandler<1,3,3> mesh(Rmesh);
 			Evaluator<1,3,3> evaluator(mesh);
 			evaluator.integrate(incidenceMatrix, nRegions, nElements, coef, REAL(result));
@@ -175,7 +175,7 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 		free(incidenceMatrix[i]);
 	}
 	free(incidenceMatrix);
-	
+
 
 	UNPROTECT(1);
     // result list

@@ -9,6 +9,7 @@
 #include "regressionData.h"
 #include "solver.h"
 #include "integratePsi.h"
+#include "kronecker_product.h"
 #include <memory>
 
 //! A base class for the smooth regression.
@@ -74,9 +75,9 @@ class MixedSplineRegression
 		void setTimeMass();
     void smoothSecondDerivative();
 
-		inline SpMat const & getPt() const { return Pt_; };
-		inline SpMat const & getPhi() const { return phi_; };
-		inline SpMat const & getTimeMass() const { return timeMass_; };
+		inline SpMat const & getPt() const { return Pt_; }
+		inline SpMat const & getPhi() const { return phi_; }
+		inline SpMat const & getTimeMass() const { return timeMass_; }
 
 };
 
@@ -95,7 +96,7 @@ class MixedFDRegression
 
     void setDerOperator();
 
-		inline SpMat const & getDerOpL() const { return derOpL_; };
+		inline SpMat const & getDerOpL() const { return derOpL_; }
 
 };
 
@@ -129,7 +130,7 @@ class SpaceTimeRegression
 	// kron(IM,psi) 	for parabolic case
 	SpMat B_;
 	//! Kronecker product of the matrix W (1/domainArea) and identity
-	VectorXr Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
+	MatrixXr Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
 
 	MatrixXr U_;	//! psi^T * W or psi^T * A * W padded with zeros, needed for Woodbury decomposition
 	MatrixXr V_;   //! W^T*psi, if pointwise data is U^T, needed for Woodbury decomposition
@@ -145,6 +146,7 @@ class SpaceTimeRegression
 	MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	MatrixXr H_; //! The hat matrix of the regression
 
+	VectorXr rhs_ic_correction;	//!Initial condition correction (parabolic case)
 	VectorXr _rightHandSide;         //!A Eigen::VectorXr: Stores the system right hand side.
 	MatrixXv _solution; //!A Eigen::VectorXr: Stores the system solution.
 	MatrixXr _dof;          //! A Eigen::MatrixXr storing the computed dofs
@@ -184,19 +186,18 @@ class SpaceTimeRegression
 
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
-		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData)
+		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData){};
 	//! The function solving the system, used by the children classes. Saves the result in _solution
 	/*!
 	    \param oper an operator, which is the Stiffness operator in case of Laplacian regularization
 	    \param u the forcing term, will be used only in case of anysotropic nonstationary regression
 	*/
-	template<typename A>
-	void apply(EOExpr<A> oper,const ForcingTerm & u);
+	void apply();
 
 	//! A inline member that returns a VectorXr, returns the whole solution_.
-	inline std::vector<VectorXr> const & getSolution() const{return _solution;};
+	inline std::vector<VectorXr> const & getSolution() const{return _solution;}
 	//! A function returning the computed dofs of the model
-	inline std::vector<Real> const & getDOF() const{return _dof;};
+	inline std::vector<Real> const & getDOF() const{return _dof;}
 };
 
 

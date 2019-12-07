@@ -123,6 +123,7 @@ void RegressionDataTime::setObservations(SEXP Robservations)
 			else
 			{
 				observations_[i] = 0.0;
+				observations_na_.push_back(i);
 			}
 		}
 	}
