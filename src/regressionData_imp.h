@@ -53,8 +53,8 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SE
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
 
 	order_ =  INTEGER(Rorder)[0];
-	flag_mass_ = LOGICAL(Rflag_mass)[0];
-	flag_parabolic_ = LOGICAL(Rflag_parabolic)[0];
+	flag_mass_ = INTEGER(Rflag_mass)[0];
+	flag_parabolic_ = INTEGER(Rflag_parabolic)[0];
 
 	DOF_ = INTEGER(DOF)[0];
 	UInt length_indexes = Rf_length(RBCIndices);
