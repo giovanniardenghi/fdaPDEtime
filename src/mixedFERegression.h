@@ -25,7 +25,7 @@ class MixedFERegressionBase
 		SpMat R1_;	//! North-east block of system matrix matrixNoCov_
 		SpMat R0_;	//! South-east block of system matrix matrixNoCov_
 		SpMat psi_; //! Psi matrix of the model
-		VectorXr A_;	//A_.asDiagonal() = diag(|A_1|,...,|A_N|) areal matrix
+		SpMat A_;	//A_.asDiagonal() = diag(|A_1|,...,|A_N|) areal matrix
 
 		VectorXr forcingTerm_;
 
@@ -38,7 +38,7 @@ class MixedFERegressionBase
 		SpMat const & getPsi() const {return psi_;}
 		SpMat const & getR0() const {return R0_;}
 		SpMat const & getR1() const {return R1_;}
-		VectorXr const & getA() const {return A_;}
+		SpMat const & getA() const {return A_;}
 		VectorXr const & getForcingTerm() const {return forcingTerm_;}
 
 		template<typename A>
@@ -130,7 +130,7 @@ class SpaceTimeRegression
 	// kron(IM,psi) 	for parabolic case
 	SpMat B_;
 	//! Kronecker product of the matrix W (1/domainArea) and identity
-	MatrixXr Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
+	SpMat Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
 
 	MatrixXr U_;	//! psi^T * W or psi^T * A * W padded with zeros, needed for Woodbury decomposition
 	MatrixXr V_;   //! W^T*psi, if pointwise data is U^T, needed for Woodbury decomposition
@@ -185,8 +185,8 @@ class SpaceTimeRegression
 	void system_factorize();
 	//! A function which solves the factorized system
 	template<typename Derived>
-	MatrixXr system_solve(const Eigen::MatrixBase<Derived>&);
-
+		MatrixXr system_solve(const Eigen::MatrixBase<Derived>&);
+		
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
 		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData){};

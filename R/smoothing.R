@@ -151,9 +151,6 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                   ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                   GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
-    N = nrow(FEMbasis$mesh$nodes)
-    M = nrow(time_mesh)
-
   } else if(class(FEMbasis$mesh) == 'MESH.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
 
     bigsol = NULL
@@ -163,9 +160,6 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                       covariates=covariates, incidence_matrix=incidence_matrix,
                                       ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                       GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
-
-    N = nrow(FEMbasis$mesh$nodes)
-    M = nrow(time_mesh)
 
   } else if(class(FEMbasis$mesh) == 'MESH.2D' & !is.null(PDE_parameters) & space_varying==TRUE){
 
@@ -177,16 +171,11 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                         GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
-    N = nrow(FEMbasis$mesh$nodes)
-    M = nrow(time_mesh)
-
   }else if(class(FEMbasis$mesh) == 'MESH.2.5D'){
 
     bigsol = NULL
     print('C++ Code Execution')
     bigsol = CPP_smooth.manifold.FEM.basis(locations, observations, FEMbasis, lambda, covariates, incidence_matrix, ndim, mydim, BC, GCV,GCVMETHOD, nrealizations)
-
-    numnodes = FEMbasis$mesh$nnodes
 
   }else if(class(FEMbasis$mesh) == 'MESH.3D'){
 
@@ -194,15 +183,16 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     print('C++ Code Execution')
     bigsol = CPP_smooth.volume.FEM.basis(locations, observations, FEMbasis, lambda, covariates, incidence_matrix, ndim, mydim, BC, GCV,GCVMETHOD, nrealizations)
 
-    numnodes = FEMbasis$mesh$nnodes
   }
+  N = nrow(FEMbasis$mesh$nodes)
+  M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
-  f = bigsol[[1]][1:N*M,]
+  f = bigsol[[1]][1:(N*M)]
   g = bigsol[[1]][(N*M+1):(2*N*M),]
-
+  dof = bigsol[[2]]
   # Make Functional objects object
-  fit.FEM  = FEM(f, FEMbasis)
-  PDEmisfit.FEM = FEM(g, FEMbasis)
+  # fit.FEM  = FEM(f, FEMbasis)
+  # PDEmisfit.FEM = FEM(g, FEMbasis)
 
   reslist = NULL
   beta = getBetaCoefficients(locations, observations, fit.FEM, covariates, incidence_matrix, ndim, mydim)
@@ -211,7 +201,8 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     seq=getGCV(locations = locations, observations = observations, fit.FEM = fit.FEM, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
     reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
   }else{
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta)
+    # reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta)
+    reslist=list(coeff=f, g=g, beta = beta, FEMbasis=FEMbasis, time_mesh=time_mesh, dof=dof)
   }
 
   return(reslist)

@@ -212,11 +212,13 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   }
 
   if(!is.null(IC))
+  {
     if(ncol(IC) != 1)
       stop("'IC' must be a column vector")
     if(length(IC) != FEMbasis$nbasis)
       stop("'IC' must be a vector of length 'FEMbasis$nbasis'")
-
+  }
+  
   if(!is.null(PDE_parameters) & space_varying==FALSE)
   {
     if(!all.equal(dim(PDE_parameters$K), c(2,2)))
