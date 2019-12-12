@@ -413,7 +413,7 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
   evalmat
 }
 
-CPP_eval.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
 
   # EVAL_FEM_FD evaluates the FEM fd object at points (X,Y)

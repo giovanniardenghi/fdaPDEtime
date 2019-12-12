@@ -188,7 +188,12 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
   f = bigsol[[1]][1:(N*M)]
+  if(FLAG_PARABOLIC)
+    f = c(IC,f)
   g = bigsol[[1]][(N*M+1):(2*N*M),]
+  if(FLAG_PARABOLIC)
+    g = c(rep(0,length(IC)),g)
+
   dof = bigsol[[2]]
   # Make Functional objects object
   fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
@@ -201,8 +206,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     seq=getGCV(locations = locations, observations = observations, fit.FEM = fit.FEM, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
     reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
   }else{
-    # reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta)
-    reslist=list(coeff=f, g=g, beta = beta, FEMbasis=FEMbasis, time_mesh=time_mesh, dof=dof)
+    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta)
   }
 
   return(reslist)

@@ -53,6 +53,19 @@ eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
   return(as.matrix(res))
 }
 
+#' Evaluate a FEM_time object at a set of point locations
+#'
+#' @param FEM_time A \code{FEM_time} object to be evaluated.
+#' @param locations A 3-columns(in case of planar mesh) or 4-columns(in case of 2D manifold in a 3D space or a 3D volume) matrix with the time and spatial locations where the FEM_time object should be evaluated.
+#' @param incidence_matrix In case of areal data, the #regions x #elements incidence matrix defining the regions
+#' @return
+#' A matrix of numeric evaluations of the \code{FEM_time} object. Each row indicates the location where the evaluation has been taken, the column indicates the
+#' function evaluated.
+#' @description It evaluates a FEM_time object the specified set of locations or regions. Locations and incidence_matrix parameters cannot be both null or both provided.
+#' @usage eval.FEM_time(FEM_time, locations, incidence_matrix=NULL)
+#' @references
+#'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
+
 eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL)
 {
   if (is.null(FEM_time))
@@ -84,7 +97,7 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL)
   if(class(FEM_time$FEMbasis$mesh)=='MESH.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
   }
   # }else if(class(FEM_time$FEMbasis$mesh)=='MESH.2.5D'){
   #   ndim = 3
