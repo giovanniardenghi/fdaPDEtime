@@ -9,10 +9,6 @@
 #include "R_ext/Print.h"
 
 //#include <libseq/mpi.h>
-#include "../inst/include/dmumps_c.h"
-#define JOB_INIT -1
-#define JOB_END -2
-#define USE_COMM_WORLD -987654
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::addDirichletBC()
@@ -782,6 +778,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 			system_factorize();
 			//
+			_solution(s,t).resize(2*M*N);
 		  _solution(s,t) = this->template system_solve(this->_rightHandSide);
 			// Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//

@@ -11,7 +11,10 @@
 #include "integratePsi.h"
 #include "kronecker_product.h"
 #include <memory>
-
+#include "../inst/include/dmumps_c.h"
+#define JOB_INIT -1
+#define JOB_END -2
+#define USE_COMM_WORLD -987654
 //! A base class for the smooth regression.
 
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
@@ -186,7 +189,7 @@ class SpaceTimeRegression
 	//! A function which solves the factorized system
 	template<typename Derived>
 		MatrixXr system_solve(const Eigen::MatrixBase<Derived>&);
-		
+
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
 		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData){};

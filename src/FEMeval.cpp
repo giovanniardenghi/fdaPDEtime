@@ -13,6 +13,7 @@
 #include "mesh_objects.h"
 #include "mesh.h"
 #include "evaluator.h"
+#include "spline.h"
 
 extern "C" {
 //! This function manages the various option for the solution evaluation.
@@ -180,6 +181,87 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 	UNPROTECT(1);
     // result list
     return(result);
+}
+
+SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim)
+{
+	UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
+	UInt ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
+	UInt nt = Rf_length(Rmesh_time);
+	Real *mesh_time,*t;
+
+	mesh_time = REAL(Rmesh_time);
+	t = REAL(Rtime_locations);
+	bool flag_par = INTEGER(Rflag_parabolic)[0];
+
+	UInt DEGREE = flag_par ? 1 : 3;
+	UInt M = nt + DEGREE - 1;
+	SpMat phi(n,M);
+
+	if(flag_par)
+	{
+		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
+		Real value;
+		for (UInt i = 0; i < n; ++i)
+		{
+			for (UInt j = 0; j < M; ++j)
+			{
+				value = spline.BasisFunction(DEGREE, j, t[i]);
+				if (value!=0)
+				{
+					phi.coeffRef(i,j) = value;
+				}
+			}
+		}
+	}
+	else
+	{
+		Spline<IntegratorGaussP5,3,2>spline(mesh_time,nt);
+		Real value;
+		for (UInt i = 0; i < n; ++i)
+		{
+			for (UInt j = 0; j < M; ++j)
+			{
+				value = spline.BasisFunction(DEGREE, j, t[i]);
+				if (value!=0)
+				{
+					phi.coeffRef(i,j) = value;
+				}
+			}
+		}
+	}
+	phi.makeCompressed();
+
+	SEXP result;
+
+	PROTECT(result=Rf_allocVector(REALSXP, n));
+	SEXP RCOEFF;
+
+	PROTECT(RCOEFF=Rf_allocVector(REALSXP, ns));
+
+	Real* coeff= REAL(Rcoef);
+	REAL(RCOEFF)[0] = coeff;
+	SEXP temp = eval_FEM_fd(Rmesh, Rlocations, RincidenceMatrix, RCOEFF, Rorder, Rfast, Rmydim, Rndim);
+	for(UInt k=0; k < n; k++)
+	{
+		REAL(result)[k] = REAL(temp)[k];
+		if(!ISNA(REAL(result)[k]))
+			REAL(result)[k] = REAL(result)[k]*phi.coeff(k,0);
+	}
+
+	for(UInt i=1; i<M; ++i)
+	{
+		coeff += ns;
+		REAL(RCOEFF)[0] = coeff;
+		temp = eval_FEM_fd(Rmesh, Rlocations, RincidenceMatrix, RCOEFF, Rorder, Rfast, Rmydim, Rndim);
+		for(UInt k=0; k<n; ++k)
+		{
+			if(!ISNA(REAL(result)[k]))
+				REAL(result)[k] = REAL(result)[k] + REAL(temp)[k]*phi.coeff(k,i);
+		}
+	}
+	UNPROTECT(2);
+	return(result);
 }
 
 }
