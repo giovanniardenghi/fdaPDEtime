@@ -191,8 +191,8 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   g = bigsol[[1]][(N*M+1):(2*N*M),]
   dof = bigsol[[2]]
   # Make Functional objects object
-  # fit.FEM  = FEM(f, FEMbasis)
-  # PDEmisfit.FEM = FEM(g, FEMbasis)
+  fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
+  PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
 
   reslist = NULL
   beta = getBetaCoefficients(locations, observations, fit.FEM, covariates, incidence_matrix, ndim, mydim)

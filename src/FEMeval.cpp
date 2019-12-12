@@ -239,8 +239,10 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 
 	PROTECT(RCOEFF=Rf_allocVector(REALSXP, ns));
 
-	Real* coeff= REAL(Rcoef);
-	REAL(RCOEFF)[0] = coeff;
+	for(UInt j=0; j<ns; ++j)
+	{
+		REAL(RCOEFF)[j] = REAL(Rcoef)[j];
+	}
 	SEXP temp = eval_FEM_fd(Rmesh, Rlocations, RincidenceMatrix, RCOEFF, Rorder, Rfast, Rmydim, Rndim);
 	for(UInt k=0; k < n; k++)
 	{
@@ -251,8 +253,10 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 
 	for(UInt i=1; i<M; ++i)
 	{
-		coeff += ns;
-		REAL(RCOEFF)[0] = coeff;
+		for(UInt j=0; j<ns; ++j)
+		{
+			REAL(RCOEFF)[j] = REAL(Rcoef)[i*ns+j];
+		}
 		temp = eval_FEM_fd(Rmesh, Rlocations, RincidenceMatrix, RCOEFF, Rorder, Rfast, Rmydim, Rndim);
 		for(UInt k=0; k<n; ++k)
 		{

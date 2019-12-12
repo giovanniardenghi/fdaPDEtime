@@ -413,6 +413,60 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
   evalmat
 }
 
+CPP_eval.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+{
+
+  # EVAL_FEM_FD evaluates the FEM fd object at points (X,Y)
+  #
+  #        arguments:
+  # X         an array of x-coordinates.
+  # Y         an array of y-coordinates.
+  # FELSPLOBJ a FELspline object
+  # FAST      a boolean indicating if the walking algorithm should be apply
+  #        output:
+  # EVALMAT   an array of the same size as X and Y containing the value of
+  #           FELSPLOBJ at (X,Y).
+
+  FEMbasis = FEM_time$FEMbasis
+  # Indexes in C++ starts from 0, in R from 1, opportune transformation
+
+  FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
+  FEMbasis$mesh$edges = FEMbasis$mesh$edges - 1
+  FEMbasis$mesh$neighbors[FEMbasis$mesh$neighbors != -1] = FEMbasis$mesh$neighbors[FEMbasis$mesh$neighbors != -1] - 1
+
+  # Imposing types, this is necessary for correct reading from C++
+  ## Set proper type for correct C++ reading
+  locations <- as.matrix(locations)
+  storage.mode(locations) <- "double"
+  time_locations <- as.matrix(time_locations)
+  storage.mode(time_locations) <- "double"
+  incidence_matrix <- as.matrix(incidence_matrix)
+  storage.mode(incidence_matrix) <- "integer"
+  storage.mode(FEMbasis$mesh$nodes) <- "double"
+  storage.mode(FEMbasis$mesh$triangles) <- "integer"
+  storage.mode(FEMbasis$mesh$edges) <- "integer"
+  storage.mode(FEMbasis$mesh$neighbors) <- "integer"
+  storage.mode(FEMbasis$order) <- "integer"
+  storage.mode(FEM_time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM_time$coeff)
+  storage.mode(coeff) <- "double"
+  storage.mode(ndim) <- "integer"
+  storage.mode(mydim) <- "integer"
+  storage.mode(locations) <- "double"
+  storage.mode(redundancy) <- "integer"
+  storage.mode(FLAG_PARABOLIC) <- "integer"
+
+  #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
+  evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
+  for (i in 1:ncol(coeff)){
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+                         FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
+  }
+
+  #Returning the evaluation matrix
+  evalmat
+}
+
 
 CPP_get_evaluations_points = function(mesh, order)
 {
