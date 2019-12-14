@@ -75,22 +75,31 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL)
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' NOR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
-    stop("'locations' NOR 'incidence_matrix' required; both are given.")
+    if(dim(locations)[2]!=1)
+      stop("spatial locations NOR 'incidence_matrix' required; both are given.")
 
-  if(!is.null(locations))
-  {
-    if(dim(locations)[2]<3)
-      stop("'locations' requires at least t,X,Y")
-    if(dim(locations)[1]==dim(FEM_time$FEMbasis$mesh$nodes)[1] & (dim(locations)[2]-1)==dim(FEM_time$FEMbasis$mesh$nodes)[2])
-    warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM_time object evaluation
-            at the mesh nodes, use FEM_time$coeff instead")
-    time_locations <- locations[,1]
-    locations <- locations[,2:dim(locations)[2]]
-  }
   if (is.null(locations))
+  {
     stop("time locations required; is NULL.")
+  }
   else
-    incidence_matrix <- matrix(nrow = 0, ncol = 1)
+  {
+    time_locations <- locations[,1]
+    if(is.null(incidence_matrix))
+    {
+      if(dim(locations)[2]<3)
+        stop("'locations' requires at least t,X,Y")
+      if(dim(locations)[1]==dim(FEM_time$FEMbasis$mesh$nodes)[1] & (dim(locations)[2]-1)==dim(FEM_time$FEMbasis$mesh$nodes)[2])
+        warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM_time object evaluation
+              at the mesh nodes, use FEM_time$coeff instead")
+      locations <- locations[,2:dim(locations)[2]]
+      incidence_matrix <- matrix(nrow = 0, ncol = 1)
+    }
+    else
+    {
+      locations <- matrix(nrow=0, ncol=1)
+    }
+  }
 
   res <- NULL
 
