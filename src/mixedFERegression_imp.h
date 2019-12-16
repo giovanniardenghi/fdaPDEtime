@@ -392,176 +392,186 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	}
 }
 
-// template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
-// void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedom(UInt output_index, Real lambda)
-// {
-// 	int GCVmethod = regressionData_.getGCVmethod();
-// 	switch (GCVmethod) {
-// 		case 1:
-// 			computeDegreesOfFreedomExact(output_index, lambda);
-// 			break;
-// 		case 2:
-// 			computeDegreesOfFreedomStochastic(output_index, lambda);
-// 			break;
-// 	}
-// }
-//
-// template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
-// void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedomExact(UInt output_index, Real lambda)
-// {
-//
-// 	UInt nnodes = mesh_.num_nodes();
-// 	UInt nlocations = regressionData_.getNumberofObservations();
-// 	Real degrees=0;
-//
-// 	// Case 1: MUMPS
-// 	if (regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() == 0 )
-// 	{
-// 		auto k = regressionData_.getObservationsIndices();
-// 		DMUMPS_STRUC_C id;
-// 		//int myid, ierr;
-//         //int argc=0;
-//         //char ** argv= NULL;
-//         //MPI_Init(&argc,&argv);
-// 		//ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-//
-// 		id.sym=0;
-// 		id.par=1;
-// 		id.job=JOB_INIT;
-// 		id.comm_fortran=USE_COMM_WORLD;
-// 		dmumps_c(&id);
-//
-// 		std::vector<int> irn;
-// 		std::vector<int> jcn;
-// 		std::vector<double> a;
-// 		std::vector<int> irhs_ptr;
-// 		std::vector<int> irhs_sparse;
-// 		double* rhs_sparse= (double*)malloc(nlocations*sizeof(double));
-//
-// 		//if( myid==0){
-// 			id.n=2*nnodes;
-// 			for (int j=0; j<matrixNoCov_.outerSize(); ++j){
-// 				for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it){
-// 					irn.push_back(it.row()+1);
-// 					jcn.push_back(it.col()+1);
-// 					a.push_back(it.value());
-// 				}
-// 			}
-// 		//}
-// 		id.nz=irn.size();
-// 		id.irn=irn.data();
-// 		id.jcn=jcn.data();
-// 		id.a=a.data();
-// 		id.nz_rhs=nlocations;
-// 		id.nrhs=2*nnodes;
-// 		int j = 1;
-// 		irhs_ptr.push_back(j);
-// 		for (int l=0; l<k[0]-1; ++l) {
-// 			irhs_ptr.push_back(j);
-// 		}
-// 		for (int i=0; i<k.size()-1; ++i) {
-// 			++j;
-// 			for (int l=0; l<k[i+1]-k[i]; ++l) {
-// 				irhs_ptr.push_back(j);
-// 			}
-//
-// 		}
-// 		++j;
-// 		for (int i=k[k.size()-1]; i < id.nrhs; ++i) {
-// 			irhs_ptr.push_back(j);
-// 		}
-// 		for (int i=0; i<nlocations; ++i){
-// 			irhs_sparse.push_back(k[i]+1);
-// 		}
-// 		id.irhs_sparse=irhs_sparse.data();
-// 		id.irhs_ptr=irhs_ptr.data();
-// 		id.rhs_sparse=rhs_sparse;
-//
-// 		#define ICNTL(I) icntl[(I)-1]
-// 		//Output messages suppressed
-// 		id.ICNTL(1)=-1;
-// 		id.ICNTL(2)=-1;
-// 		id.ICNTL(3)=-1;
-// 		id.ICNTL(4)=0;
-// 		id.ICNTL(20)=1;
-// 		id.ICNTL(30)=1;
-// 		id.ICNTL(14)=200;
-//
-// 		id.job=6;
-// 		dmumps_c(&id);
-// 		id.job=JOB_END;
-// 		dmumps_c(&id);
-//
-// 		//if (myid==0){
-// 			for (int i=0; i< nlocations; ++i){
-// 				//std::cout << "rhs_sparse" << rhs_sparse[i] << std::endl;
-// 				degrees+=rhs_sparse[i];
-// 			}
-// 		//}
-// 		free(rhs_sparse);
-//
-// 		//MPI_Finalize();
-// 	}
-// 	// Case 2: Eigen
-// 	else{
-// 		MatrixXr X1;
-// 		if (regressionData_.getNumberOfRegions() == 0){ //pointwise data
-// 			X1 = psi_.transpose() * LeftMultiplybyQ(psi_);
-// 		}else{ //areal data
-// 			X1 = psi_.transpose() * A_.asDiagonal() * LeftMultiplybyQ(psi_);
-// 		}
-//
-// 		if (isRcomputed_ == false){
-// 			isRcomputed_ = true;
-// 			Eigen::SparseLU<SpMat> solver;
-// 			solver.compute(R0_);
-// 			auto X2 = solver.solve(R1_);
-// 			R_ = R1_.transpose() * X2;
-// 		}
-//
-// 		MatrixXr X3 = X1 + lambda * R_;
-// 		Eigen::LDLT<MatrixXr> Dsolver(X3);
-//
-// 		auto k = regressionData_.getObservationsIndices();
-//
-// 		if(regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() != 0) {
-// 			degrees += regressionData_.getCovariates().cols();
-//
-// 			// Setup rhs B
-// 			MatrixXr B;
-// 			B = MatrixXr::Zero(nnodes,nlocations);
-// 			// B = I(:,k) * Q
-// 			for (auto i=0; i<nlocations;++i) {
-// 				VectorXr ei = VectorXr::Zero(nlocations);
-// 				ei(i) = 1;
-// 				VectorXr Qi = LeftMultiplybyQ(ei);
-// 				for (int j=0; j<nlocations; ++j) {
-// 					B(k[i], j) = Qi(j);
-// 				}
-// 			}
-// 			// Solve the system TX = B
-// 			MatrixXr X;
-// 			X = Dsolver.solve(B);
-// 			// Compute trace(X(k,:))
-// 			for (int i = 0; i < k.size(); ++i) {
-// 				degrees += X(k[i], i);
-// 			}
-// 		}
-//
-// 		if (!regressionData_.isLocationsByNodes()){
-// 			MatrixXr X;
-// 			X = Dsolver.solve(MatrixXr(X1));
-//
-// 			if (regressionData_.getCovariates().rows() != 0) {
-// 				degrees += regressionData_.getCovariates().cols();
-// 			}
-// 			for (int i = 0; i<nnodes; ++i) {
-// 				degrees += X(i,i);
-// 			}
-// 		}
-// 	}
-// 	_dof[output_index] = degrees;
-// }
+template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
+void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedom(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT)
+{
+	int GCVmethod = regressionData_.getGCVmethod();
+	switch (GCVmethod) {
+		case 1:
+			computeDegreesOfFreedomExact(output_indexS, output_indexT, lambdaS, lambdaT);
+			break;
+		// case 2:
+		// 	computeDegreesOfFreedomStochastic(output_indexS, output_indexT, lambdaS, lambdaT);
+		// 	break;
+	}
+}
+
+template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
+void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT)
+{
+
+	UInt N = mesh_.num_nodes();
+	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
+
+	// UInt nlocations = regressionData_.getNumberofObservations();
+	Real degrees=0;
+
+	// // Case 1: MUMPS
+	// if (regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() == 0 )
+	// {
+	// 	auto k = regressionData_.getObservationsIndices();
+	// 	DMUMPS_STRUC_C id;
+	// 	//int myid, ierr;
+  //       //int argc=0;
+  //       //char ** argv= NULL;
+  //       //MPI_Init(&argc,&argv);
+	// 	//ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+	//
+	// 	id.sym=0;
+	// 	id.par=1;
+	// 	id.job=JOB_INIT;
+	// 	id.comm_fortran=USE_COMM_WORLD;
+	// 	dmumps_c(&id);
+	//
+	// 	std::vector<int> irn;
+	// 	std::vector<int> jcn;
+	// 	std::vector<double> a;
+	// 	std::vector<int> irhs_ptr;
+	// 	std::vector<int> irhs_sparse;
+	// 	double* rhs_sparse= (double*)malloc(nlocations*sizeof(double));
+	//
+	// 	//if( myid==0){
+	// 		id.n=2*nnodes;
+	// 		for (int j=0; j<matrixNoCov_.outerSize(); ++j){
+	// 			for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it){
+	// 				irn.push_back(it.row()+1);
+	// 				jcn.push_back(it.col()+1);
+	// 				a.push_back(it.value());
+	// 			}
+	// 		}
+	// 	//}
+	// 	id.nz=irn.size();
+	// 	id.irn=irn.data();
+	// 	id.jcn=jcn.data();
+	// 	id.a=a.data();
+	// 	id.nz_rhs=nlocations;
+	// 	id.nrhs=2*nnodes;
+	// 	int j = 1;
+	// 	irhs_ptr.push_back(j);
+	// 	for (int l=0; l<k[0]-1; ++l) {
+	// 		irhs_ptr.push_back(j);
+	// 	}
+	// 	for (int i=0; i<k.size()-1; ++i) {
+	// 		++j;
+	// 		for (int l=0; l<k[i+1]-k[i]; ++l) {
+	// 			irhs_ptr.push_back(j);
+	// 		}
+	//
+	// 	}
+	// 	++j;
+	// 	for (int i=k[k.size()-1]; i < id.nrhs; ++i) {
+	// 		irhs_ptr.push_back(j);
+	// 	}
+	// 	for (int i=0; i<nlocations; ++i){
+	// 		irhs_sparse.push_back(k[i]+1);
+	// 	}
+	// 	id.irhs_sparse=irhs_sparse.data();
+	// 	id.irhs_ptr=irhs_ptr.data();
+	// 	id.rhs_sparse=rhs_sparse;
+	//
+	// 	#define ICNTL(I) icntl[(I)-1]
+	// 	//Output messages suppressed
+	// 	id.ICNTL(1)=-1;
+	// 	id.ICNTL(2)=-1;
+	// 	id.ICNTL(3)=-1;
+	// 	id.ICNTL(4)=0;
+	// 	id.ICNTL(20)=1;
+	// 	id.ICNTL(30)=1;
+	// 	id.ICNTL(14)=200;
+	//
+	// 	id.job=6;
+	// 	dmumps_c(&id);
+	// 	id.job=JOB_END;
+	// 	dmumps_c(&id);
+	//
+	// 	//if (myid==0){
+	// 		for (int i=0; i< nlocations; ++i){
+	// 			//std::cout << "rhs_sparse" << rhs_sparse[i] << std::endl;
+	// 			degrees+=rhs_sparse[i];
+	// 		}
+	// 	//}
+	// 	free(rhs_sparse);
+	//
+	// 	//MPI_Finalize();
+	// }
+	// // Case 2: Eigen
+	// else{
+		MatrixXr X1;
+		if (regressionData_.getNumberOfRegions() == 0){ //pointwise data
+			X1 = B_.transpose() * LeftMultiplybyQ(B_);
+		}else{ //areal data
+			X1 = B_.transpose() * Ak_ * LeftMultiplybyQ(B_);
+		}
+
+		if(isRcomputed_==false && regressionData_.getFlagParabolic())
+		{
+			isRcomputed_ = true;
+			R_.compute(R0k_);
+		}
+
+		SpMat P;
+		if(regressionData_.getFlagParabolic())
+		{
+			SpMat X2 = R1k_+lambdaT*LR0k_;
+			P = lambdaS * X2.transpose() * R_.solve(X2);
+		}
+		else
+		{
+			P = lambdaS*Psk_ + lambdaT*Ptk_;
+		}
+		MatrixXr X3 = X1 + P;
+		Eigen::LDLT<MatrixXr> Dsolver(X3);
+
+		// auto k = regressionData_.getObservationsIndices();
+
+		// if(regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() != 0) {
+		// 	degrees += regressionData_.getCovariates().cols();
+		//
+		// 	// Setup rhs B
+		// 	MatrixXr B;
+		// 	B = MatrixXr::Zero(nnodes,nlocations);
+		// 	// B = I(:,k) * Q
+		// 	for (auto i=0; i<nlocations;++i) {
+		// 		VectorXr ei = VectorXr::Zero(nlocations);
+		// 		ei(i) = 1;
+		// 		VectorXr Qi = LeftMultiplybyQ(ei);
+		// 		for (int j=0; j<nlocations; ++j) {
+		// 			B(k[i], j) = Qi(j);
+		// 		}
+		// 	}
+		// 	// Solve the system TX = B
+		// 	MatrixXr X;
+		// 	X = Dsolver.solve(B);
+		// 	// Compute trace(X(k,:))
+		// 	for (int i = 0; i < k.size(); ++i) {
+		// 		degrees += X(k[i], i);
+		// 	}
+		// }
+
+		// if (!regressionData_.isLocationsByNodes()){
+			MatrixXr X;
+			X = Dsolver.solve(MatrixXr(X1));
+
+			if (regressionData_.getCovariates().rows() != 0) {
+				degrees += regressionData_.getCovariates().cols();
+			}
+			for (int i = 0; i<M*N; ++i) {
+				degrees += X(i,i);
+			}
+		// }
+	// }
+	_dof(output_indexS,output_indexT) = degrees;
+}
 //
 // template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 // void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedomStochastic(UInt output_index, Real lambda)
@@ -687,6 +697,15 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		phi = Spline.getPhi();
 		SpMat Pt = Spline.getPt();
 		Ptk_ = kroneckerProduct(Pt,IN);
+		if(regressionData_.computeDOF())
+		{
+			MatrixXr Ps(N,N);
+			Eigen::SparseLU<SpMat> solver;
+			solver.compute(R0);
+			auto X1 = solver.solve(R1);
+			Ps = R1.transpose() * X1;
+			Psk_ = kroneckerProduct(IM,Ps.sparseView());
+		}
 		LR0k_.resize(N*M,N*M);
 	}
 
@@ -782,11 +801,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		  _solution(s,t) = this->template system_solve(this->_rightHandSide);
 			// Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//
-			// if(regressionData_.computeDOF())
-			// {
-			// 	computeDegreesOfFreedom(s,t,lambdaS,lambdaT);
-			// }
-			// else
+			if(regressionData_.computeDOF())
+			{
+				computeDegreesOfFreedom(s,t,lambdaS,lambdaT);
+			}
+			else
 				_dof(s,t) = -1;
 		}
 	}

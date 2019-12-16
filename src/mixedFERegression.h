@@ -121,6 +121,8 @@ class SpaceTimeRegression
 	SpMat matrixNoCov_;	//! System matrix with psi^T*psi or psi^T*A*psi in north-west block  (is the full system matrix if no covariates)
 	SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
+	//! kron(IM,Ps) (separable version)
+	SpMat Psk_;
 	//! kron(Pt,IN) (separable version)
 	SpMat Ptk_;
 	//! kron(IM,R1)
@@ -144,7 +146,7 @@ class SpaceTimeRegression
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
 	bool isWTWfactorized_;
 	bool isRcomputed_;
-	MatrixXr R_; //R1 ^T * R0^-1 * R1
+	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
 
 	MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	MatrixXr H_; //! The hat matrix of the regression
@@ -178,10 +180,10 @@ class SpaceTimeRegression
 	//! A member function which builds all the matrices needed for assembling matrixNoCov_
 	void buildMatrices();
 	//! A member function computing the dofs
-	// void computeDegreesOfFreedom(UInt output_index, Real lambda);
-	// //! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
-	// void computeDegreesOfFreedomExact(UInt output_index, Real lambda);
-	// //! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
+	void computeDegreesOfFreedom(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
+	//! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
+	void computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
+	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
 	// void computeDegreesOfFreedomStochastic(UInt output_index, Real lambda);
 
 	  //! A function to factorize the system, using Woodbury decomposition when there are covariates

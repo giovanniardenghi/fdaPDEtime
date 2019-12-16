@@ -187,12 +187,12 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
-  f = bigsol[[1]][1:(N*M)]
+  f = bigsol[[1]][1:(N*M),]
   if(FLAG_PARABOLIC)
-    f = c(IC,f)
+    f = rbind(matrix(data=rep(IC,ncol(f)),nrow=length(IC),ncol=ncol(f)),f)
   g = bigsol[[1]][(N*M+1):(2*N*M),]
   if(FLAG_PARABOLIC)
-    g = c(rep(0,length(IC)),g)
+    g = rbind(matrix(data=rep(0,ncol(g)),nrow=length(IC),ncol=ncol(g)),g)
 
   dof = bigsol[[2]]
   # Make Functional objects object
