@@ -203,8 +203,9 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   beta = getBetaCoefficients(locations, observations, fit.FEM, covariates, incidence_matrix, ndim, mydim)
   if(GCV == TRUE)
   {
-    seq=getGCV(locations = locations, observations = observations, fit.FEM = fit.FEM, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
-    reslist=list(fit.FEM = fit.FEM, PDEmisfit.FEM = PDEmisfit.FEM, beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
+    seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM_time = fit.FEM_time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
+    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time,
+            beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
   }else{
     reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta)
   }
@@ -238,12 +239,15 @@ getBetaCoefficients<-function(locations, observations, fit.FEM, covariates, inci
 }
 
 
-getGCV<-function(locations, observations, fit.FEM, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
+getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
 {
   loc_nodes = NULL
   fnhat = NULL
 
-  edf = as.vector(edf)
+  edf = as.matrix(edf)
+
+  if(time_locations==NULL)
+    time_locations <- fit.FEM_time$mesh_time
 
   if(is.null(locations) && is.null(incidence_matrix))
   {
@@ -251,7 +255,7 @@ getGCV<-function(locations, observations, fit.FEM, covariates = NULL, incidence_
     fnhat = as.matrix(fit.FEM$coeff[loc_nodes,])
   }else{
     loc_nodes = 1:length(observations)
-    fnhat = eval.FEM(FEM = fit.FEM, locations = locations, incidence_matrix = incidence_matrix)
+    fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
   }
 
   zhat = NULL
