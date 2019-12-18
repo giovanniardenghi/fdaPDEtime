@@ -144,8 +144,8 @@ class SpaceTimeRegression
 	Eigen::SparseLU<SpMat> matrixNoCovdec_; // Stores the factorization of matrixNoCov_
 	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
-	bool isWTWfactorized_;
-	bool isRcomputed_;
+	bool isWTWfactorized_=false;
+	bool isRcomputed_=false;
 	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
 
 	MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace

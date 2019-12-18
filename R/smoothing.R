@@ -184,13 +184,21 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     bigsol = CPP_smooth.volume.FEM.basis(locations, observations, FEMbasis, lambda, covariates, incidence_matrix, ndim, mydim, BC, GCV,GCVMETHOD, nrealizations)
 
   }
+  if (is.null(time_locations)) {
+      time_locations <- time_mesh
+      if(FLAG_PARABOLIC)
+        time_locations <- time_locations[2:length(time_locations)]
+  }
+  if (is.null(time_mesh)) {
+      time_mesh <- time_locations
+  }
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
-  f = bigsol[[1]][1:(N*M),]
+  f = as.matrix(bigsol[[1]][1:(N*M),])
   if(FLAG_PARABOLIC)
     f = rbind(matrix(data=rep(IC,ncol(f)),nrow=length(IC),ncol=ncol(f)),f)
-  g = bigsol[[1]][(N*M+1):(2*N*M),]
+  g = as.matrix(bigsol[[1]][(N*M+1):(2*N*M),])
   if(FLAG_PARABOLIC)
     g = rbind(matrix(data=rep(0,ncol(g)),nrow=length(IC),ncol=ncol(g)),g)
 
@@ -246,8 +254,8 @@ getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariat
 
   edf = as.matrix(edf)
 
-  if(time_locations==NULL)
-    time_locations <- fit.FEM_time$mesh_time
+  # if(time_locations==NULL)
+  #   time_locations <- fit.FEM_time$mesh_time
 
   if(is.null(locations) && is.null(incidence_matrix))
   {
