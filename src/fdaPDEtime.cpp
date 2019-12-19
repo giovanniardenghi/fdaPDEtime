@@ -7,8 +7,6 @@
 #include "mesh.h"
 #include "finite_element.h"
 #include "matrix_assembler.h"
-#include "FPCAData.h"
-#include "FPCAObject.h"
 #include "solverdefinitions.h"
 //#include <chrono>
 

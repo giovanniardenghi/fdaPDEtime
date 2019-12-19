@@ -8,10 +8,10 @@ plot.FEM_time = function(x,t)
     stop("time must be a single value")
   if(t<x$mesh_time[1] || t>x$mesh_time[length(x$mesh_time)])
     stop("time provided out of the 'time_mesh'")
-  storage.mode(t) <- "integer"
+  storage.mode(t) <- "double"
   storage.mode(x$FEMbasis$nbasis) <- "integer"
-  storage.mode(x$mesh_time) <- "integer"
-  storage.mode(x$coeff) <- "integer"
+  storage.mode(x$mesh_time) <- "double"
+  storage.mode(x$coeff) <- "double"
   storage.mode(x$FLAG_PARABOLIC) <- "integer"
 
   solution <- .Call("eval_FEM_time_nodes",x$FEMbasis$nbasis,x$mesh_time,t,x$coeff,x$FLAG_PARABOLIC,package = "fdaPDEtime")

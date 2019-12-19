@@ -79,6 +79,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::setPsi()
 		// }
 		// psi_.setFromTriplets(tripletAll.begin(),tripletAll.end());
 		// psi_.makeCompressed();
+		psi_.resize(nnodes,nnodes);
 		psi_.setIdentity();
 	}
 	else if (regressionData_.getNumberOfRegions() == 0)
@@ -201,24 +202,24 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	//std::cout<<"Coefficients' Matrix Set Correctly"<<std::endl;
 }
 
-template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
-void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::buildMatrixOnlyCov(const SpMat& B,  const MatrixXr& H)
-{
-
-	UInt N = mesh_.num_nodes();
-	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
-	UInt nnodes = M*N;
-
-	MatrixXr NWblock= MatrixXr::Zero(2*nnodes,2*nnodes);
-
-	if(regressionData_.getNumberOfRegions()==0)
-    	NWblock.topLeftCorner(nnodes,nnodes)=B.transpose()*(-H)*B;
-  else
-	    NWblock.topLeftCorner(nnodes,nnodes)=B.transpose()*Ak_*(-H)*B;
-
-  matrixOnlyCov_=NWblock.sparseView();
-	matrixOnlyCov_.makeCompressed();
-}
+// template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
+// void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::buildMatrixOnlyCov(const SpMat& B,  const MatrixXr& H)
+// {
+//
+// 	UInt N = mesh_.num_nodes();
+// 	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
+// 	UInt nnodes = M*N;
+//
+// 	MatrixXr NWblock= MatrixXr::Zero(2*nnodes,2*nnodes);
+//
+// 	if(regressionData_.getNumberOfRegions()==0)
+//     	NWblock.topLeftCorner(nnodes,nnodes)=B.transpose()*(-H)*B;
+//   else
+// 	    NWblock.topLeftCorner(nnodes,nnodes)=B.transpose()*Ak_*(-H)*B;
+//
+//   matrixOnlyCov_=NWblock.sparseView();
+// 	matrixOnlyCov_.makeCompressed();
+// }
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::system_factorize()
@@ -415,161 +416,162 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	// UInt nlocations = regressionData_.getNumberofObservations();
 	Real degrees=0;
+	SpMat X;
+	SpMat BBsmall(M*N,M*N);
+	if(regressionData_.getCovariates().rows() == 0)
+	{
+		BBsmall = B_.transpose()*B_;
+	}
+	else
+	{
+		BBsmall = (SpMat(B_.transpose())*LeftMultiplybyQ(B_)).sparseView();
+	}
 
-	// // Case 1: MUMPS
-	// if (regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() == 0 )
+	SpMat BB(2*M*N,2*M*N);
+
+	std::vector<coeff> tripletAll;
+	tripletAll.reserve(BBsmall.nonZeros());
+
+	for (int k=0; k<BBsmall.outerSize(); ++k)
+		for (SpMat::InnerIterator it(BBsmall,k); it; ++it)
+		{
+			tripletAll.push_back(coeff(it.row(), it.col(),it.value()));
+		}
+
+	BB.setFromTriplets(tripletAll.begin(),tripletAll.end());
+	BB.makeCompressed();
+
+	Real *values = matrixNoCov_.valuePtr();
+	UInt *inner = matrixNoCov_.innerIndexPtr();
+	UInt *outer = matrixNoCov_.outerIndexPtr();
+
+	UInt nz = matrixNoCov_.nonZeros();
+
+	UInt nzj;
+	UInt counter = 0;
+	UInt *jcn = new UInt[nz];
+
+	for(UInt i = 1; i < 2*M*N+1; ++i)
+	{
+		nzj = outer[i]-outer[i-1];
+
+		for(UInt j=0;j<nzj;++j)
+		{
+			jcn[counter+j] = i;
+			//cout << jcn[counter+j] << " ";
+		}
+		counter+=nzj;
+	}
+
+	UInt *irn = new UInt[nz];
+
+	for(UInt i=0; i<nz; ++i)
+	{
+		irn[i]=inner[i]+1;
+		//cout << irn[i] << " ";
+	}
+
+	DMUMPS_STRUC_C id;
+
+
+	UInt nz_rhs = BB.nonZeros();
+	UInt *innerBB = BB.innerIndexPtr();
+	UInt *outerBB = BB.outerIndexPtr();
+
+	UInt irhs_sparse[nz_rhs];
+
+	for(UInt i=0; i<nz_rhs; ++i)
+	{
+		irhs_sparse[i]=innerBB[i]+1;
+		//cout << irn[i] << " ";
+	}
+
+	UInt irhs_ptr[BB.cols()+1];
+
+	for(UInt i=0; i<BB.cols()+1; ++i)
+	{
+		irhs_ptr[i]=outerBB[i]+1;
+		//cout << irn[i] << " ";
+	}
+
+	Real rhs_sparse[nz_rhs];
+
+	// Initialize a MUMPS instance. Use MPI_COMM_WORLD
+	id.job=JOB_INIT; id.par=1; id.sym=0;id.comm_fortran=USE_COMM_WORLD;
+	dmumps_c(&id);
+
+	//Define the problem on the host
+	id.n = BB.cols(); id.nz = nz; id.irn=irn; id.jcn=jcn;
+	id.a = values;
+	id.nz_rhs = nz_rhs; id.nrhs = BB.cols();
+	id.rhs_sparse = rhs_sparse;
+	id.irhs_sparse = irhs_sparse;
+	id.irhs_ptr = irhs_ptr;
+
+	#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+	/* No outputs */
+	id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+
+	id.ICNTL(20)=1; id.ICNTL(30)=1;
+
+	/* Call the MUMPS package. */
+	id.job=6;
+	dmumps_c(&id);
+
+	/* Terminate instance */
+	id.job=JOB_END; dmumps_c(&id);
+
+	delete[] irn;
+	delete[] jcn;
+	//std::cout<<"delete ok"<<std::endl;
+
+	SpMat BBPinv = BB;
+
+	Real *valueBBPinv = BBPinv.valuePtr();
+
+	for(UInt i = 0; i < nz_rhs; ++i)
+		valueBBPinv[i] = rhs_sparse[i];
+
+	X = BBPinv*BB;
+
+	// MatrixXr X1;
+	// if (regressionData_.getNumberOfRegions() == 0)
+	// { //pointwise data
+	// 	X1 = B_.transpose() * LeftMultiplybyQ(B_);
+	// }
+	// else
+	// { //areal data
+	// 	X1 = B_.transpose() * Ak_ * LeftMultiplybyQ(B_);
+	// }
+	//
+	// if(isRcomputed_==false && regressionData_.getFlagParabolic())
 	// {
-	// 	auto k = regressionData_.getObservationsIndices();
-	// 	DMUMPS_STRUC_C id;
-	// 	//int myid, ierr;
-  //       //int argc=0;
-  //       //char ** argv= NULL;
-  //       //MPI_Init(&argc,&argv);
-	// 	//ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
-	//
-	// 	id.sym=0;
-	// 	id.par=1;
-	// 	id.job=JOB_INIT;
-	// 	id.comm_fortran=USE_COMM_WORLD;
-	// 	dmumps_c(&id);
-	//
-	// 	std::vector<int> irn;
-	// 	std::vector<int> jcn;
-	// 	std::vector<double> a;
-	// 	std::vector<int> irhs_ptr;
-	// 	std::vector<int> irhs_sparse;
-	// 	double* rhs_sparse= (double*)malloc(nlocations*sizeof(double));
-	//
-	// 	//if( myid==0){
-	// 		id.n=2*nnodes;
-	// 		for (int j=0; j<matrixNoCov_.outerSize(); ++j){
-	// 			for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it){
-	// 				irn.push_back(it.row()+1);
-	// 				jcn.push_back(it.col()+1);
-	// 				a.push_back(it.value());
-	// 			}
-	// 		}
-	// 	//}
-	// 	id.nz=irn.size();
-	// 	id.irn=irn.data();
-	// 	id.jcn=jcn.data();
-	// 	id.a=a.data();
-	// 	id.nz_rhs=nlocations;
-	// 	id.nrhs=2*nnodes;
-	// 	int j = 1;
-	// 	irhs_ptr.push_back(j);
-	// 	for (int l=0; l<k[0]-1; ++l) {
-	// 		irhs_ptr.push_back(j);
-	// 	}
-	// 	for (int i=0; i<k.size()-1; ++i) {
-	// 		++j;
-	// 		for (int l=0; l<k[i+1]-k[i]; ++l) {
-	// 			irhs_ptr.push_back(j);
-	// 		}
-	//
-	// 	}
-	// 	++j;
-	// 	for (int i=k[k.size()-1]; i < id.nrhs; ++i) {
-	// 		irhs_ptr.push_back(j);
-	// 	}
-	// 	for (int i=0; i<nlocations; ++i){
-	// 		irhs_sparse.push_back(k[i]+1);
-	// 	}
-	// 	id.irhs_sparse=irhs_sparse.data();
-	// 	id.irhs_ptr=irhs_ptr.data();
-	// 	id.rhs_sparse=rhs_sparse;
-	//
-	// 	#define ICNTL(I) icntl[(I)-1]
-	// 	//Output messages suppressed
-	// 	id.ICNTL(1)=-1;
-	// 	id.ICNTL(2)=-1;
-	// 	id.ICNTL(3)=-1;
-	// 	id.ICNTL(4)=0;
-	// 	id.ICNTL(20)=1;
-	// 	id.ICNTL(30)=1;
-	// 	id.ICNTL(14)=200;
-	//
-	// 	id.job=6;
-	// 	dmumps_c(&id);
-	// 	id.job=JOB_END;
-	// 	dmumps_c(&id);
-	//
-	// 	//if (myid==0){
-	// 		for (int i=0; i< nlocations; ++i){
-	// 			//std::cout << "rhs_sparse" << rhs_sparse[i] << std::endl;
-	// 			degrees+=rhs_sparse[i];
-	// 		}
-	// 	//}
-	// 	free(rhs_sparse);
-	//
-	// 	//MPI_Finalize();
+	// 	isRcomputed_ = true;
+	// 	R_.compute(R0k_);
 	// }
-	// // Case 2: Eigen
-	// else{
-		MatrixXr X1;
-		if (regressionData_.getNumberOfRegions() == 0){ //pointwise data
-			X1 = B_.transpose() * LeftMultiplybyQ(B_);
-		}else{ //areal data
-			X1 = B_.transpose() * Ak_ * LeftMultiplybyQ(B_);
-		}
-
-		if(isRcomputed_==false && regressionData_.getFlagParabolic())
-		{
-			isRcomputed_ = true;
-			R_.compute(R0k_);
-		}
-
-		SpMat P;
-		if(regressionData_.getFlagParabolic())
-		{
-			SpMat X2 = R1k_+lambdaT*LR0k_;
-			P = lambdaS * X2.transpose() * R_.solve(X2);
-		}
-		else
-		{
-			P = lambdaS*Psk_ + lambdaT*Ptk_;
-		}
-		MatrixXr X3 = X1 + P;
-		Eigen::LDLT<MatrixXr> Dsolver(X3);
-
-		// auto k = regressionData_.getObservationsIndices();
-
-		// if(regressionData_.isLocationsByNodes() && regressionData_.getCovariates().rows() != 0) {
-		// 	degrees += regressionData_.getCovariates().cols();
-		//
-		// 	// Setup rhs B
-		// 	MatrixXr B;
-		// 	B = MatrixXr::Zero(nnodes,nlocations);
-		// 	// B = I(:,k) * Q
-		// 	for (auto i=0; i<nlocations;++i) {
-		// 		VectorXr ei = VectorXr::Zero(nlocations);
-		// 		ei(i) = 1;
-		// 		VectorXr Qi = LeftMultiplybyQ(ei);
-		// 		for (int j=0; j<nlocations; ++j) {
-		// 			B(k[i], j) = Qi(j);
-		// 		}
-		// 	}
-		// 	// Solve the system TX = B
-		// 	MatrixXr X;
-		// 	X = Dsolver.solve(B);
-		// 	// Compute trace(X(k,:))
-		// 	for (int i = 0; i < k.size(); ++i) {
-		// 		degrees += X(k[i], i);
-		// 	}
-		// }
-
-		// if (!regressionData_.isLocationsByNodes()){
-			MatrixXr X;
-			X = Dsolver.solve(MatrixXr(X1));
-
-			if (regressionData_.getCovariates().rows() != 0) {
-				degrees += regressionData_.getCovariates().cols();
-			}
-			for (int i = 0; i<M*N; ++i) {
-				degrees += X(i,i);
-			}
-		// }
+	//
+	// SpMat P;
+	// if(regressionData_.getFlagParabolic())
+	// {
+	// 	SpMat X2 = R1k_+lambdaT*LR0k_;
+	// 	P = lambdaS * X2.transpose() * R_.solve(X2);
 	// }
+	// else
+	// {
+	// 	P = lambdaS*Psk_ + lambdaT*Ptk_;
+	// }
+	// MatrixXr X3 = X1 + P;
+	// Eigen::LDLT<MatrixXr> Dsolver(X3);
+	//
+	// MatrixXr X;
+	// X = Dsolver.solve(MatrixXr(X1));
+	//
+	if (regressionData_.getCovariates().rows() != 0) {
+		degrees += regressionData_.getCovariates().cols();
+	}
+	for (int i = 0; i<M*N; ++i) {
+		degrees += X.coeff(i,i);
+	}
 	_dof(output_indexS,output_indexT) = degrees;
 }
 //
@@ -697,15 +699,15 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		phi = Spline.getPhi();
 		SpMat Pt = Spline.getPt();
 		Ptk_ = kroneckerProduct(Pt,IN);
-		if(regressionData_.computeDOF())
-		{
-			MatrixXr Ps(N,N);
-			Eigen::SparseLU<SpMat> solver;
-			solver.compute(R0);
-			auto X1 = solver.solve(R1);
-			Ps = R1.transpose() * X1;
-			Psk_ = kroneckerProduct(IM,Ps.sparseView());
-		}
+		// if(regressionData_.computeDOF())
+		// {
+		// 	MatrixXr Ps(N,N);
+		// 	Eigen::SparseLU<SpMat> solver;
+		// 	solver.compute(R0);
+		// 	auto X1 = solver.solve(R1);
+		// 	Ps = R1.transpose() * X1;
+		// 	Psk_ = kroneckerProduct(IM,Ps.sparseView());
+		// }
 		LR0k_.resize(N*M,N*M);
 	}
 
@@ -761,6 +763,8 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	this->_solution.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
 	this->_dof.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
 
+	VectorXr rhs=_rightHandSide;
+
 	for(UInt s = 0; s<regressionData_.getLambdaS().size(); ++s)
 	{
 		for(UInt t = 0; t<regressionData_.getLambdaT().size(); ++t)
@@ -786,7 +790,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			{
 				for(UInt i = 0; i<regressionData_.getInitialValues().rows(); i++)
 				{
-					_rightHandSide(M*N+i) += -lambdaS*rhs_ic_correction_(i);
+					_rightHandSide(M*N+i) = rhs(M*N+i)-lambdaS*rhs_ic_correction_(i);
 				}
 			}
 
@@ -795,11 +799,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			if(regressionData_.getDirichletIndices().size() != 0)  // if areal data NO BOUNDARY CONDITIONS
 				addDirichletBC();
 
-			system_factorize();
+			// system_factorize();
 			//
 			_solution(s,t).resize(2*M*N);
-		  _solution(s,t) = this->template system_solve(this->_rightHandSide);
-			// Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
+		  // _solution(s,t) = this->template system_solve(this->_rightHandSide);
+			Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//
 			if(regressionData_.computeDOF())
 			{
@@ -807,6 +811,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			}
 			else
 				_dof(s,t) = -1;
+			Rprintf("s:%d,	t:%d		dof:%f\n",s,t,_dof(s,t));
 		}
 	}
 }
