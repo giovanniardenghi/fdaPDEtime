@@ -79,6 +79,10 @@ CPP_smooth.manifold.FEM.basis<-function(locations, time_locations, observations,
   ## Set propr type for correct C++ reading
   locations <- as.matrix(locations)
   storage.mode(locations) <- "double"
+  time_locations <- as.matrix(time_locations)
+  storage.mode(time_locations) <- "double"
+  time_mesh <- as.matrix(time_mesh)
+  storage.mode(time_mesh) <- "double"
   data <- as.vector(observations)
   storage.mode(observations) <- "double"
   storage.mode(FEMbasis$mesh$order) <- "integer"
@@ -90,13 +94,22 @@ CPP_smooth.manifold.FEM.basis<-function(locations, time_locations, observations,
   storage.mode(covariates) <- "double"
   incidence_matrix <- as.matrix(incidence_matrix)
   storage.mode(incidence_matrix) <- "integer"
-  storage.mode(lambda) <- "double"
+  storage.mode(lambdaS) <- "double"
+  storage.mode(lambdaT) <- "double"
+  IC <- as.matrix(IC)
+  storage.mode(IC) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
   storage.mode(BC$BC_indices) <- "integer"
   storage.mode(BC$BC_values)  <- "double"
   GCV <- as.integer(GCV)
   storage.mode(GCV) <- "integer"
+
+  FLAG_MASS <- as.integer(FLAG_MASS)
+  storage.mode(FLAG_MASS) <-"integer"
+
+  FLAG_PARABOLIC <- as.integer(FLAG_PARABOLIC)
+  storage.mode(FLAG_PARABOLIC) <-"integer"
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
@@ -111,10 +124,9 @@ CPP_smooth.manifold.FEM.basis<-function(locations, time_locations, observations,
   return(bigsol)
 }
 
-CPP_eval.manifold.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydim)
+CPP_eval.manifold.FEM = function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
-  FEMbasis = FEM$FEMbasis
-
+  FEMbasis = FEM_time$FEMbasis
   # C++ function for manifold works with vectors not with matrices
 
   FEMbasis$mesh$triangles=c(t(FEMbasis$mesh$triangles))
@@ -127,23 +139,27 @@ CPP_eval.manifold.FEM = function(FEM, locations, incidence_matrix, redundancy, n
   ## Set proper type for correct C++ reading
   locations <- as.matrix(locations)
   storage.mode(locations) <- "double"
+  time_locations <- as.matrix(time_locations)
+  storage.mode(time_locations) <- "double"
   incidence_matrix <- as.matrix(incidence_matrix)
   storage.mode(incidence_matrix) <- "integer"
   storage.mode(FEMbasis$mesh$nodes) <- "double"
   storage.mode(FEMbasis$mesh$triangles) <- "integer"
   storage.mode(FEMbasis$order) <- "integer"
-  coeff <- as.matrix(FEM$coeff)
+  storage.mode(FEM_time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM_time$coeff)
   storage.mode(coeff) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
   storage.mode(locations) <- "double"
   storage.mode(redundancy) <- "integer"
+  storage.mode(FLAG_PARABOLIC) <- "integer"
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
-    evalmat[,i] <- .Call("eval_FEM_fd", FEMbasis$mesh, locations, incidence_matrix, coeff[,i],
-                         FEMbasis$order, redundancy, mydim, ndim, package = "fdaPDE")
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+                         FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
   }
 
   #Returning the evaluation matrix
