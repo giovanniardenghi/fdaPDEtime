@@ -119,7 +119,7 @@ class SpaceTimeRegression
 
 
 	SpMat matrixNoCov_;	//! System matrix with psi^T*psi or psi^T*A*psi in north-west block  (is the full system matrix if no covariates)
-	SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
+	// SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
 	//! kron(IM,Ps) (separable version)
 	SpMat Psk_;
