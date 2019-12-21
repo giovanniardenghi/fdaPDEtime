@@ -120,7 +120,7 @@ CPP_smooth.volume.FEM.basis<-function(locations, time_locations, observations, F
   return(bigsol)
 }
 
-CPP_eval.volume.FEM = function(FEM_time, locations, incidence_matrix, redundancy, ndim, mydim)
+CPP_eval.volume.FEM = function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
   FEMbasis = FEM_time$FEMbasis
 
@@ -150,6 +150,7 @@ CPP_eval.volume.FEM = function(FEM_time, locations, incidence_matrix, redundancy
   storage.mode(mydim) <- "integer"
   storage.mode(locations) <- "double"
   storage.mode(redundancy) <- "integer"
+  storage.mode(FLAG_PARABOLIC) <- "integer"
 
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))

@@ -267,9 +267,13 @@ getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariat
 
   if(is.null(locations) && is.null(incidence_matrix))
   {
-    loc_nodes = (1:length(observations))[!is.na(observations)]
-    fnhat = as.matrix(fit.FEM$coeff[loc_nodes,])
-  }else{
+    loc_nodes = (1:length(observations))#[!is.na(observations)]
+    #fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
+    locations=fit.FEM_time$FEMbasis$mesh$nodes[which(fit.FEM_time$FEMbasis$mesh$nodesmarkers==0),]
+    fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+
+  }else
+  {
     loc_nodes = 1:length(observations)
     fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
   }

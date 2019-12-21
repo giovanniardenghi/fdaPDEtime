@@ -125,16 +125,18 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     stop("'observations' must be a column vector")
   if(nrow(observations) < 1)
     stop("'observations' must contain at least one element")
-  if(is.null(locations))
-  {
-    if(class(FEMbasis$mesh) == "MESH.2D"){
-      if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-    }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D"){
-      if(nrow(observations) > FEMbasis$mesh$nnodes)
-        stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-    }
-  }
+  # if(is.null(locations))
+  # {
+  #   if(class(FEMbasis$mesh) == "MESH.2D")
+  #   {
+  #     if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D")
+  #   {
+  #     if(nrow(observations) > FEMbasis$mesh$nnodes)
+  #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
+  #   }
+  # }
   if(!is.null(locations))
   {
     if(ncol(locations) != ndim)
@@ -218,7 +220,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if(length(IC) != FEMbasis$nbasis)
       stop("'IC' must be a vector of length 'FEMbasis$nbasis'")
   }
-  
+
   if(!is.null(PDE_parameters) & space_varying==FALSE)
   {
     if(!all.equal(dim(PDE_parameters$K), c(2,2)))

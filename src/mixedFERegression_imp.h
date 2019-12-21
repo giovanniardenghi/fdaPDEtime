@@ -71,6 +71,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::setPsi()
 	psi_.resize(nlocations, nnodes);
 	if (regressionData_.isLocationsByNodes()) //pointwise data
 	{
+		psi_.resize(nnodes, nnodes);
 		// std::vector<coeff> tripletAll;
 		// auto k = regressionData_.getObservationsIndices();
 		// tripletAll.reserve(k.size());
