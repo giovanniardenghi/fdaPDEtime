@@ -122,7 +122,7 @@ class SpaceTimeRegression
 	// SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
 	//! kron(IM,Ps) (separable version)
-	SpMat Psk_;
+	// SpMat Psk_;
 	//! kron(Pt,IN) (separable version)
 	SpMat Ptk_;
 	//! kron(IM,R1)
@@ -145,11 +145,11 @@ class SpaceTimeRegression
 	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
 	bool isWTWfactorized_=false;
-	bool isRcomputed_=false;
-	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
+	// bool isRcomputed_=false;
+	// Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
 
-	MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
-	MatrixXr H_; //! The hat matrix of the regression
+	// MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
+	// MatrixXr H_; //! The hat matrix of the regression
 
 	VectorXr rhs_ft_correction_;	//! right hand side correction for the forcing term:
 	VectorXr rhs_ic_correction_;	//!Initial condition correction (parabolic case)
@@ -169,9 +169,9 @@ class SpaceTimeRegression
 	//! A function which takes care of missing values in the final system
 	void addNA();
 	//! A member function which builds the Q matrix
-	void setQ();
-	//! A member function which builds the H matrix
-	void setH();
+	// void setQ();
+	// //! A member function which builds the H matrix
+	// void setH();
 	// //! A member function which builds the A vector containing the areas of the regions in case of areal data
 	// void setAk();
 
@@ -184,7 +184,7 @@ class SpaceTimeRegression
 	//! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
 	void computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
 	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
-	// void computeDegreesOfFreedomStochastic(UInt output_index, Real lambda);
+	void computeDegreesOfFreedomStochastic(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
 
 	  //! A function to factorize the system, using Woodbury decomposition when there are covariates
 	void system_factorize();
