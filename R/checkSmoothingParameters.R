@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100)
+checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,CPP_solver=1,nrealizations = 100)
 {
   #################### Parameter Check #########################
 
@@ -109,6 +109,9 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
 
   if (GCVmethod != 1 && GCVmethod != 2)
     stop("GCVmethod must be either Exact or Stochastic")
+
+  if (CPP_solver != 0 && CPP_solver != 1)
+    stop("CPP_solver must be either Woodbury or MUMPS")
 
   if( !is.numeric(nrealizations) || nrealizations < 1)
     stop("nrealizations must be a positive integer")

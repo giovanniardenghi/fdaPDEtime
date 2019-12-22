@@ -5,6 +5,7 @@
 #include <chrono>
 #include <random>
 #include <fstream>
+#include "timing.h"
 
 #include "R_ext/Print.h"
 
@@ -268,9 +269,14 @@ template<typename Derived>
 MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::system_solve(const Eigen::MatrixBase<Derived> &b) {
 
 	// Resolution of the system matrixNoCov * x1 = b
-	// MatrixXr x1 = matrixNoCovdec_.solve(b);
+	UInt solver=regressionData_.getCPP_solver();
+
 	VectorXr x1(b.rows());
-	Mumps::solve(matrixNoCov_,b,x1);
+	if (solver==0)
+		MatrixXr x1 = matrixNoCovdec_.solve(b);
+	else
+		Mumps::solve(matrixNoCov_,b,x1);
+
 
 	if (regressionData_.getCovariates().rows() != 0) {
 		// Resolution of G * x2 = V * x1
@@ -585,7 +591,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	UInt N = mesh_.num_nodes();
 	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
 	UInt nnodes = M*N;
-	UInt nlocations = B_.cols();
+	UInt nlocations = B_.rows();
 
 	std::default_random_engine generator;
 	// Creation of the random matrix
@@ -800,7 +806,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 {
 	UInt N = mesh_.num_nodes();
 	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
-
+	UInt solver=regressionData_.getCPP_solver();
 	buildMatrices();
 	//
 	// if(!regressionData_.getCovariates().rows() == 0)
@@ -856,8 +862,21 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			system_factorize();
 			//
 			_solution(s,t).resize(2*M*N);
-		  // _solution(s,t) = this->template system_solve(this->_rightHandSide);
-			Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
+			bool done=false;
+			if(!done)
+			{
+				done=true;
+				Rprintf("# of nonZeros in matrixNoCov is: %d \n  matrixNoCov.nrows()=matrixNoCov.ncols()= %d",matrixNoCov_.nonZeros(),2*N*M);
+			}
+
+			timer clock;
+			clock.start();
+			if(solver==0)
+		  	_solution(s,t) = this->template system_solve(this->_rightHandSide);
+			else
+				Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
+			clock.stop();
+
 			//
 			if(regressionData_.computeDOF())
 			{

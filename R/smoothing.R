@@ -80,7 +80,7 @@
 #' print(ZincMeuseCovar$beta)
 
 
-smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100)
+smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", CPP_solver="MUMPS", nrealizations = 100)
 {
   if(class(FEMbasis$mesh) == "MESH.2D"){
     ndim = 2
@@ -104,7 +104,16 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     stop("GCVmethod must be either Stochastic or Exact")
   }
 
-  space_varying=checkSmoothingParameters(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, nrealizations)
+
+  if(CPP_solver=="MUMPS")
+    CPP_SOLVER=1
+  else if(CPP_solver=="Woodbury")
+    CPP_SOLVER=0
+  else{
+    stop("CPP_solver must be either MUMPS or Woodbury")
+  }
+
+  space_varying=checkSmoothingParameters(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, CPP_SOLVER, nrealizations)
 
   ## Coverting to format for internal usage
   if(!is.null(locations))
@@ -149,7 +158,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     bigsol = CPP_smooth.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                   time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                   ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                  GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
+                                  GCVMETHOD=GCVMETHOD,CPP_SOLVER=CPP_SOLVER, nrealizations=nrealizations)
 
   } else if(class(FEMbasis$mesh) == 'MESH.2D' & !is.null(PDE_parameters) & space_varying==FALSE){
 
@@ -159,7 +168,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                       time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                       covariates=covariates, incidence_matrix=incidence_matrix,
                                       ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                      GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
+                                      GCVMETHOD=GCVMETHOD, CPP_SOLVER=CPP_SOLVER, nrealizations=nrealizations)
 
   } else if(class(FEMbasis$mesh) == 'MESH.2D' & !is.null(PDE_parameters) & space_varying==TRUE){
 
@@ -169,7 +178,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                         covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
+                                        GCVMETHOD=GCVMETHOD, CPP_SOLVER=CPP_SOLVER, nrealizations=nrealizations)
 
   }else if(class(FEMbasis$mesh) == 'MESH.2.5D'){
 

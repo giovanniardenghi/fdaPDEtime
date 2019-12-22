@@ -39,6 +39,7 @@ class  RegressionDataTime{
 		std::vector<Real> lambdaS_; //space penalization
 		std::vector<Real> lambdaT_;	//time penalization
 		UInt GCVmethod_;
+		UInt CPP_solver_;
 		UInt nrealizations_;      // Number of relizations for the stochastic estimation of GCV
 
 		bool flag_mass_;	//mass penalization, only for separable version (flag_parabolic_==FALSE)
@@ -88,7 +89,7 @@ class  RegressionDataTime{
 
 		#ifdef R_VERSION_
 		explicit RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
-								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod,
+								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod, SEXP RCPP_solver,
 								SEXP Rnrealizations);
 		#endif
 
@@ -142,6 +143,8 @@ class  RegressionDataTime{
 		//! 1: exact calculation
 		//! 2: stochastic estimation
 		inline UInt const & getGCVmethod() const {return GCVmethod_;}
+		//
+		inline UInt const & getCPP_solver() const {return CPP_solver_;}
 		//! A method returning the number of vectors to use to stochastically estimate the edf
 		inline UInt const & getNrealizations() const {return nrealizations_;}
 		//! A method returning whether the PDE coefficients are space varying or not
@@ -179,7 +182,7 @@ class  RegressionDataTimeElliptic:public RegressionDataTime
 		#ifdef R_VERSION_
 		explicit RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-				SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
+				SEXP DOF,SEXP RGCVmethod, SEXP RCPP_solver, SEXP Rnrealizations);
 		#endif
 
 		explicit RegressionDataTimeElliptic(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
@@ -226,7 +229,7 @@ class RegressionDataTimeEllipticSpaceVarying:public RegressionDataTime
 		#ifdef R_VERSION_
 		explicit RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 			  SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-			  SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations);
+			  SEXP DOF, SEXP RGCVmethod, SEXP RCPP_solver, SEXP Rnrealizations);
 		#endif
 
 

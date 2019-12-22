@@ -41,7 +41,7 @@ RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(s
 #ifdef R_VERSION_
 RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
 						SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod,
-						SEXP Rnrealizations)
+						SEXP RCPP_solver, SEXP Rnrealizations)
 {
 	setLocations(Rlocations);
 	setTimeLocations(Rtime_locations);
@@ -51,6 +51,7 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SE
 	setNrealizations(Rnrealizations);
 
 	GCVmethod_ = INTEGER(RGCVmethod)[0];
+	CPP_solver_ = INTEGER(RCPP_solver)[0];
 
 	order_ =  INTEGER(Rorder)[0];
 	flag_mass_ = INTEGER(Rflag_mass)[0];
@@ -76,8 +77,8 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SE
 }
 
 RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
-		SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,	SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations):
-	RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, Rnrealizations)
+		SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,	SEXP DOF,SEXP RGCVmethod,SEXP RCPP_solver, SEXP Rnrealizations):
+	RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, RCPP_solver, Rnrealizations)
 {
 	K_.resize(2, 2);
 	for(auto i=0; i<2; ++i)
@@ -98,8 +99,8 @@ RegressionDataTimeElliptic::RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rti
 }
 
 RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
-		SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations):
-					 RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, Rnrealizations),
+		SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod,SEXP RCPP_solver, SEXP Rnrealizations):
+					 RegressionDataTime(Rlocations, Rtime_locations, Robservations, Rorder, RlambdaS, RlambdaT, Rcovariates, RincidenceMatrix, RBCIndices, RBCValues, Rflag_mass, Rflag_parabolic, Ric, DOF, RGCVmethod, RCPP_solver, Rnrealizations),
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
 {this->isSpaceVarying=TRUE;}
 

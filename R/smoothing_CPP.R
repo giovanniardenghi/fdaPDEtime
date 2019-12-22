@@ -234,7 +234,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   return(bigsol)
 }
 
-CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
+CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD = 2, CPP_SOLVER=1, nrealizations = 100)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -354,12 +354,13 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
+  storage.mode(CPP_SOLVER) <- "integer"
 
   ## Call C++ function
   bigsol <- .Call("regression_PDE_space_varying", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                   covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, PACKAGE = "fdaPDEtime")
+                  IC, GCV, GCVMETHOD, CPP_SOLVER, nrealizations, PACKAGE = "fdaPDEtime")
   return(bigsol)
 }
 
@@ -595,6 +596,7 @@ CPP_get.FEM.PDE.Matrix<-function(FEMbasis, PDE_parameters)
   lambda = 0
   GCV = 0
   GCVmethod = 0
+  CPP_solver = 0
   nrealizations = 0
 
   ## Set proper type for correct C++ reading
@@ -623,11 +625,11 @@ CPP_get.FEM.PDE.Matrix<-function(FEMbasis, PDE_parameters)
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVmethod) <- "integer"
-
+  storage.mode(CPP_solver) <- "integer"
   ## Call C++ function
   triplets <- .Call("get_FEM_PDE_matrix", locations, observations, FEMbasis$mesh,
                     FEMbasis$order,mydim, ndim, lambda, PDE_parameters$K, PDE_parameters$b, PDE_parameters$c, covariates,
-                    incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod, nrealizations,
+                    incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod,CPP_solver, nrealizations,
                     PACKAGE = "fdaPDE")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
@@ -696,11 +698,12 @@ CPP_get.FEM.PDE.sv.Matrix<-function(FEMbasis, PDE_parameters)
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVmethod) <- "integer"
+  storage.mode(CPP_solver) <- "integer"
 
   ## Call C++ function
   triplets <- .Call("get_FEM_PDE_space_varying_matrix", locations, observations, FEMbasis$mesh,
                     FEMbasis$order,mydim, ndim, lambda, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u, covariates,
-                    incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod, nrealizations,
+                    incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod,CPP_solver, nrealizations,
                     PACKAGE = "fdaPDE")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
