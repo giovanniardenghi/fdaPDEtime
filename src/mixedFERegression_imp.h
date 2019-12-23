@@ -271,9 +271,9 @@ MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTim
 	// Resolution of the system matrixNoCov * x1 = b
 	UInt solver=regressionData_.getCPP_solver();
 
-	VectorXr x1(b.rows());
+	VectorXr x1(matrixNoCov_.cols());
 	if (solver==0)
-		MatrixXr x1 = matrixNoCovdec_.solve(b);
+		x1 = matrixNoCovdec_.solve(b);
 	else
 		Mumps::solve(matrixNoCov_,b,x1);
 
@@ -866,7 +866,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			if(!done)
 			{
 				done=true;
-				Rprintf("# of nonZeros in matrixNoCov is: %d \n  matrixNoCov.nrows()=matrixNoCov.ncols()= %d",matrixNoCov_.nonZeros(),2*N*M);
+				Rprintf("Number of nonZeros in matrixNoCov is: %d\n2NM= %d\n",matrixNoCov_.nonZeros(),2*N*M);
 			}
 
 			timer clock;
