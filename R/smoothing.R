@@ -203,25 +203,43 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
-  f = as.matrix(bigsol[[1]][1:(N*M),])
   if(FLAG_PARABOLIC)
-    f = rbind(matrix(data=rep(IC,ncol(f)),nrow=length(IC),ncol=ncol(f)),f)
-  g = as.matrix(bigsol[[1]][(N*M+1):(2*N*M),])
+  {
+    f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
+    for (i in 1:length(lambdaS)) 
+     for (j in 1:length(lambdaT))
+       f[,i,j] = c(IC,bigsol[[1]][1:(N*M),i+(j-1)*length(lambdaS)])
+  }
+  else
+    f = array(data=bigsol[[1]][1:(N*M),],dim = c(N*M,length(lambdaS),length(lambdaT)))
   if(FLAG_PARABOLIC)
-    g = rbind(matrix(data=rep(0,ncol(g)),nrow=length(IC),ncol=ncol(g)),g)
+  {
+    g = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
+    for (i in 1:length(lambdaS)) 
+      for (j in 1:length(lambdaT))
+        g[,i,j] = c(rep(0,length(IC)),bigsol[[1]][(N*M+1):(2*N*M),i+(j-1)*length(lambdaS)])
+  }
+  else
+    g = array(data=bigsol[[1]][(N*M+1):(2*N*M),],dim = c(N*M,length(lambdaS),length(lambdaT)))
 
   dof = bigsol[[2]]
+  GCV_ = bigsol[[3]]
+  bestlambda = bigsol[[4]]
+  if(!is.null(covariates))
+    beta = bigsol[[5]]
+  else
+    beta = NULL
   # Make Functional objects object
   fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
   PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
 
   reslist = NULL
-  beta = getBetaCoefficients(locations, observations, fit.FEM_time, covariates, incidence_matrix, ndim, mydim)
+  # beta = getBetaCoefficients(locations, observations, fit.FEM_time, covariates, incidence_matrix, ndim, mydim)
   if(GCV == TRUE)
   {
-    seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM_time = fit.FEM_time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
+    # seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM_time = fit.FEM_time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
     reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time,
-            beta = beta, edf = bigsol[[2]], stderr = seq$stderr, GCV = seq$GCV)
+            beta = beta, edf = dof, GCV = GCV_, bestlambda = bestlambda)
   }else{
     reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta)
   }

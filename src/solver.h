@@ -178,7 +178,8 @@ class BiCGSTABILUT{
 
 class Mumps{
 	public:
-    static void solve(SpMat const & A, VectorXr const & b, VectorXr &x )
+		template<typename Derived1,typename Derived2>
+    static void solve(SpMat const & A,const Eigen::MatrixBase<Derived1> & b, Eigen::MatrixBase<Derived2> & x )
 	{
 
 		const Real *values = A.valuePtr();
@@ -220,32 +221,32 @@ class Mumps{
 	    	//cout << irn[i] << " ";
 		}
 
-	    DMUMPS_STRUC_C id;
+    DMUMPS_STRUC_C id;
 
 		//Real *rhs = b.array();
-        Real *rhs = new Real[n];
-        for(UInt i = 0; i < n; ++i) rhs[i] = b(i);
+    Real rhs[b.rows()*b.cols()];
+    for(UInt i = 0; i < b.rows()*b.cols(); ++i) rhs[i] = b(i);
 
-	    /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
-	    id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
-	    dmumps_c(&id);
-	    /* Define the problem on the host */
+    /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
+    id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
+    dmumps_c(&id);
+    /* Define the problem on the host */
 
 		id.n = n; id.nz =nz; id.irn=irn; id.jcn=jcn;
-		id.a = a; id.rhs = rhs;
+		id.a = a;
+		id.lrhs = b.rows(); id.nrhs = b.cols(); id.rhs = rhs;
 
-	    #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-	    /* No outputs */
-	    id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-	    /* Call the MUMPS package. */
-	    id.job=6;
-	    dmumps_c(&id);
-	    id.job=JOB_END; dmumps_c(&id); /* Terminate instance */
+    #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+    /* No outputs */
+    id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+    /* Call the MUMPS package. */
+    id.job=6;
+    dmumps_c(&id);
+    id.job=JOB_END; dmumps_c(&id); /* Terminate instance */
 
-		for(UInt i=0; i<n; ++i)
-		{
-	    	x(i)=rhs[i];
-		}
+		for(UInt j = 0; j < b.cols(); ++j)
+			for(UInt i = 0; i < b.rows(); ++i)
+				x(i,j) = rhs[i+j*b.rows()];
 
      };
 };

@@ -28,19 +28,35 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 
 	MatrixXv const & solution = regression.getSolution();
 	MatrixXr const & dof = regression.getDOF();
+	MatrixXr const & GCV = regression.getGCV();
+	Real bestLambdaS = regression.getBestLambdaS();
+	Real bestLambdaT = regression.getBestLambdaT();
+	MatrixXv beta;
+	if(regressionData.getCovariates().rows()==0)
+	{
+		beta.resize(1,1);
+		beta(0,0).resize(1);
+		beta(0,0)(0) = 10e20;
+	}
+	else
+		 beta = regression.getBeta();
 
 	//Copy result in R memory
 	SEXP result = NILSXP;
-	result = PROTECT(Rf_allocVector(VECSXP, 2));
+	result = PROTECT(Rf_allocVector(VECSXP, 5));
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution(0,0).size(), solution.rows()*solution.cols()));
 	SET_VECTOR_ELT(result, 1, Rf_allocMatrix(REALSXP, dof.rows(), dof.cols()));
+	SET_VECTOR_ELT(result, 2, Rf_allocMatrix(REALSXP, GCV.rows(), GCV.cols()));
+	SET_VECTOR_ELT(result, 3, Rf_allocVector(REALSXP, 2));
+	SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, beta(0,0).size(), beta.rows()*beta.cols()));
+
 	Real *rans = REAL(VECTOR_ELT(result, 0));
 	for(UInt i = 0; i < solution.rows(); i++)
 	{
 		for(UInt j = 0; j < solution.cols(); j++)
 		{
 			for(UInt k = 0; k < solution(0,0).size(); k++)
-				rans[k + solution(0,0).size()*j + solution(0,0).size()*solution.cols()*i] = solution.coeff(i,j)(k);
+				rans[k + solution(0,0).size()*i + solution(0,0).size()*solution.rows()*j] = solution.coeff(i,j)(k);
 		}
 	}
 
@@ -50,6 +66,29 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 		for(UInt j = 0; j < dof.cols(); j++)
 		{
 		rans2[i + dof.rows()*j] = dof.coeff(i,j);
+		}
+	}
+
+	Real *rans3 = REAL(VECTOR_ELT(result, 2));
+	for(UInt i = 0; i < GCV.rows(); i++)
+	{
+		for(UInt j = 0; j < GCV.cols(); j++)
+		{
+		rans3[i + GCV.rows()*j] = GCV.coeff(i,j);
+		}
+	}
+
+	Real *rans4 = REAL(VECTOR_ELT(result, 3));
+	rans4[0] = bestLambdaS;
+	rans4[1] = bestLambdaT;
+
+	Real *rans5 = REAL(VECTOR_ELT(result, 4));
+	for(UInt i = 0; i < beta.rows(); i++)
+	{
+		for(UInt j = 0; j < beta.cols(); j++)
+		{
+			for(UInt k = 0; k < beta(0,0).size(); k++)
+				rans5[k + beta(0,0).size()*i + beta(0,0).size()*beta.rows()*j] = beta.coeff(i,j)(k);
 		}
 	}
 	UNPROTECT(1);

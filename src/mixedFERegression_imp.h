@@ -230,7 +230,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	UInt nnodes = M*N;
 
 	// First phase: Factorization of matrixNoCov
-	matrixNoCovdec_.compute(matrixNoCov_);
+	// matrixNoCovdec_.compute(matrixNoCov_);
 
 	if (regressionData_.getCovariates().rows() != 0)
 	{
@@ -254,7 +254,10 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		  U_.topRows(nnodes) = B_.transpose()*Ak_*W;
     }
 
-		MatrixXr D = V_*matrixNoCovdec_.solve(U_);
+		// MatrixXr D = V_*matrixNoCovdec_.solve(U_);
+		MatrixXr temp(U_.rows(),U_.cols());
+		Mumps::template solve(matrixNoCov_,U_,temp);
+		MatrixXr D = V_*temp;
 
 		// G = C + D
 		MatrixXr G = -W.transpose()*W + D;
@@ -269,16 +272,20 @@ MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTim
 
 	// Resolution of the system matrixNoCov * x1 = b
 	// MatrixXr x1 = matrixNoCovdec_.solve(b);
-	VectorXr x1(b.rows());
-	Mumps::solve(matrixNoCov_,b,x1);
+	MatrixXr x1(b.rows(),b.cols());
+	Mumps::template solve(matrixNoCov_,b,x1);
 
-	if (regressionData_.getCovariates().rows() != 0) {
+	if (regressionData_.getCovariates().rows() != 0)
+	{
 		// Resolution of G * x2 = V * x1
 
 		MatrixXr x2 = Gdec_.solve(V_*x1);
 
 		// Resolution of the system matrixNoCov * x3 = U * x2
-		x1 -= matrixNoCovdec_.solve(U_*x2);
+		MatrixXr xtemp(b.rows(),b.cols());
+		Mumps::template solve(matrixNoCov_,U_*x2,xtemp);
+		x1 -= xtemp;
+		// x1 -= matrixNoCovdec_.solve(U_*x2);
 	}
 
 	return x1;
@@ -407,6 +414,21 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		case 2:
 			computeDegreesOfFreedomStochastic(output_indexS, output_indexT, lambdaS, lambdaT);
 			break;
+	}
+	VectorXr dataHat;
+	VectorXr z = regressionData_.getObservations();
+	if(regressionData_.getCovariates().rows()==0)
+		dataHat = B_*_solution(output_indexS,output_indexT).topRows(B_.cols());
+	else
+		dataHat = z - LeftMultiplybyQ(z) + LeftMultiplybyQ(B_*_solution(output_indexS,output_indexT).topRows(B_.cols()));
+	UInt n = dataHat.rows();
+
+	_GCV(output_indexS,output_indexT) = (n / ((n-_dof(output_indexS,output_indexT)) * (n-_dof(output_indexS,output_indexT)))) * (z-dataHat).dot(z-dataHat);
+	if (_GCV(output_indexS,output_indexT) < _bestGCV)
+	{
+		bestLambdaS_ = output_indexS;
+		bestLambdaT_ = output_indexT;
+		_bestGCV = _GCV(output_indexS,output_indexT);
 	}
 }
 
@@ -570,6 +592,9 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	// X = Dsolver.solve(MatrixXr(X1));
 	//
 	if (regressionData_.getCovariates().rows() != 0) {
+		MatrixXr x1 = Gdec_.solve(V_);
+		SpMat x2 = (BBPinv * U_ * x1).sparseView();
+		X -= x2 * BBPinv * BB;
 		degrees += regressionData_.getCovariates().cols();
 	}
 	for (int i = 0; i<M*N; ++i) {
@@ -585,7 +610,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	UInt N = mesh_.num_nodes();
 	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
 	UInt nnodes = M*N;
-	UInt nlocations = B_.cols();
+	UInt nlocations = B_.rows();
 
 	std::default_random_engine generator;
 	// Creation of the random matrix
@@ -614,76 +639,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	// Resolution of the system
 	// system_factorize();
 
-	Real *values = matrixNoCov_.valuePtr();
-	UInt *inner = matrixNoCov_.innerIndexPtr();
-	UInt *outer = matrixNoCov_.outerIndexPtr();
-
-	UInt nz = matrixNoCov_.nonZeros();
-
-	UInt nzj;
-	UInt counter = 0;
-	UInt *jcn = new UInt[nz];
-
-	for(UInt i = 1; i < 2*nnodes+1; ++i)
-	{
-		nzj = outer[i]-outer[i-1];
-
-		for(UInt j=0;j<nzj;++j)
-		{
-			jcn[counter+j] = i;
-			//cout << jcn[counter+j] << " ";
-		}
-		counter+=nzj;
-	}
-
-	UInt *irn = new UInt[nz];
-
-	for(UInt i=0; i<nz; ++i)
-	{
-		irn[i]=inner[i]+1;
-		//cout << irn[i] << " ";
-	}
-
-	DMUMPS_STRUC_C id;
-
-
-	UInt nrhs = b.cols();
-	UInt lrhs = b.rows();
-
-	Real* rhs = b.data();
-
-	// Initialize a MUMPS instance. Use MPI_COMM_WORLD
-	id.job=JOB_INIT; id.par=1; id.sym=0;id.comm_fortran=USE_COMM_WORLD;
-	dmumps_c(&id);
-
-	//Define the problem on the host
-	id.n = b.rows(); id.nz = nz; id.irn=irn; id.jcn=jcn;
-	id.a = values;
-	id.lrhs = lrhs; id.nrhs = nrhs;
-	id.rhs = rhs;
-
-	#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-	/* No outputs */
-	id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-
-	id.ICNTL(20)=0;
-
-	/* Call the MUMPS package. */
-	id.job=6;
-	dmumps_c(&id);
-
-	/* Terminate instance */
-	id.job=JOB_END; dmumps_c(&id);
-
-	delete[] irn;
-	delete[] jcn;
-	//std::cout<<"delete ok"<<std::endl;
-
-	MatrixXr x(b.rows(),b.cols());
-
-	for(UInt j = 0; j < nrhs; ++j)
-		for(UInt i = 0; i < lrhs; ++i)
-			x(i,j) = rhs[i+j*lrhs];
+	MatrixXr x = system_solve(b);
 
 	MatrixXr uTB = u.transpose()*B_;
 	VectorXr edf_vect(nrealizations);
@@ -816,6 +772,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	this->_solution.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
 	this->_dof.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
+	this->_GCV.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
+	if(regressionData_.getCovariates().rows()!=0)
+	{
+		this->_beta.resize(regressionData_.getLambdaS().size(),regressionData_.getLambdaT().size());
+	}
 
 	VectorXr rhs=_rightHandSide;
 
@@ -857,14 +818,24 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			//
 			_solution(s,t).resize(2*M*N);
 		  // _solution(s,t) = this->template system_solve(this->_rightHandSide);
-			Mumps::solve(matrixNoCov_,_rightHandSide,_solution(s,t));
+			Mumps::template solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//
 			if(regressionData_.computeDOF())
 			{
 				computeDegreesOfFreedom(s,t,lambdaS,lambdaT);
 			}
 			else
+			{
 				_dof(s,t) = -1;
+				_GCV(s,t) = -1;
+			}
+
+			if(regressionData_.getCovariates().rows()!=0)
+			{
+				MatrixXr W(this->regressionData_.getCovariates());
+				VectorXr beta_rhs = W.transpose()*(regressionData_.getObservations() - B_*_solution(s,t).topRows(B_.cols()));
+				_beta(s,t) = WTW_.solve(beta_rhs);
+			}
 			// Rprintf("s:%d		t:%d		dof:%f\n",s,t,_dof(s,t));
 		}
 	}
