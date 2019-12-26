@@ -215,9 +215,9 @@ public:
 	//! A function returning the computed beta coefficients of the model
 	MatrixXv const & getBeta() const{return _beta;}
 	//! A function returning the index of the lambdaS of the best GCV
-	Real getBestLambdaS(){return bestLambdaS_;}
+	UInt getBestLambdaS(){return bestLambdaS_;}
 	//! A function returning the index of the lambdaT of the best GCV
-	Real getBestLambdaT(){return bestLambdaT_;}
+	UInt getBestLambdaT(){return bestLambdaT_;}
 
 
 };

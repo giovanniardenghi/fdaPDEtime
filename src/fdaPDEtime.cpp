@@ -29,8 +29,8 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 	MatrixXv const & solution = regression.getSolution();
 	MatrixXr const & dof = regression.getDOF();
 	MatrixXr const & GCV = regression.getGCV();
-	Real bestLambdaS = regression.getBestLambdaS();
-	Real bestLambdaT = regression.getBestLambdaT();
+	UInt bestLambdaS = regression.getBestLambdaS();
+	UInt bestLambdaT = regression.getBestLambdaT();
 	MatrixXv beta;
 	if(regressionData.getCovariates().rows()==0)
 	{
@@ -47,7 +47,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution(0,0).size(), solution.rows()*solution.cols()));
 	SET_VECTOR_ELT(result, 1, Rf_allocMatrix(REALSXP, dof.rows(), dof.cols()));
 	SET_VECTOR_ELT(result, 2, Rf_allocMatrix(REALSXP, GCV.rows(), GCV.cols()));
-	SET_VECTOR_ELT(result, 3, Rf_allocVector(REALSXP, 2));
+	SET_VECTOR_ELT(result, 3, Rf_allocVector(INTSXP, 2));
 	SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, beta(0,0).size(), beta.rows()*beta.cols()));
 
 	Real *rans = REAL(VECTOR_ELT(result, 0));
@@ -78,7 +78,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 		}
 	}
 
-	Real *rans4 = REAL(VECTOR_ELT(result, 3));
+	UInt *rans4 = INTEGER(VECTOR_ELT(result, 3));
 	rans4[0] = bestLambdaS;
 	rans4[1] = bestLambdaT;
 

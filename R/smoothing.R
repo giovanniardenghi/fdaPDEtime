@@ -176,8 +176,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     bigsol = NULL
     print('C++ Code Execution')
     bigsol = CPP_smooth.manifold.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
-                                          time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
-                                          covariates=covariates, incidence_matrix=incidence_matrix,
+                                          time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                           ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                           GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
@@ -186,8 +185,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     bigsol = NULL
     print('C++ Code Execution')
     bigsol = CPP_smooth.volume.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
-                                        time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
-                                        covariates=covariates, incidence_matrix=incidence_matrix,
+                                        time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                         GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
@@ -206,7 +204,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   if(FLAG_PARABOLIC)
   {
     f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
-    for (i in 1:length(lambdaS)) 
+    for (i in 1:length(lambdaS))
      for (j in 1:length(lambdaT))
        f[,i,j] = c(IC,bigsol[[1]][1:(N*M),i+(j-1)*length(lambdaS)])
   }
@@ -215,7 +213,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   if(FLAG_PARABOLIC)
   {
     g = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
-    for (i in 1:length(lambdaS)) 
+    for (i in 1:length(lambdaS))
       for (j in 1:length(lambdaT))
         g[,i,j] = c(rep(0,length(IC)),bigsol[[1]][(N*M+1):(2*N*M),i+(j-1)*length(lambdaS)])
   }
@@ -224,7 +222,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
   dof = bigsol[[2]]
   GCV_ = bigsol[[3]]
-  bestlambda = bigsol[[4]]
+  bestlambda = bigsol[[4]]+1
   if(!is.null(covariates))
     beta = bigsol[[5]]
   else
