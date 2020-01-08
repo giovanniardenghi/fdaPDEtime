@@ -1,7 +1,7 @@
 triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
   ## It is necessary to check for NAs and NaNs, as the triangulate C
   ## code crashes if fed with them
-  
+
   P  <- as.matrix(P)
   PB <- as.integer(PB)
   PA <- as.matrix(PA)
@@ -9,7 +9,7 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
   SB <- as.integer(SB)
   H  <- as.matrix(H)
   TR  <- as.matrix(TR)
-  
+
   storage.mode(P)  <- "double"
   storage.mode(PA) <- "double"
   #storage.mode(PB) <- "integer"
@@ -28,18 +28,18 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
                H,
                t(TR),
                flags,
-               PACKAGE="fdaPDE")
+               PACKAGE="fdaPDEtime")
   names(out) <- c("P", "PB", "PA", "T", "S", "SB", "E", "EB","TN", "VP", "VE", "VN", "VA")
   class(out) <- "triangulation"
   return(out)
 }
 
 #' Create a 2D triangular mesh
-#' 
+#'
 #' @param nodes A #nodes-by-2 matrix containing the x and y coordinates of the mesh nodes.
-#' @param nodesattributes A matrix with #nodes rows containing nodes' attributes. 
-#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed  
-#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value 
+#' @param nodesattributes A matrix with #nodes rows containing nodes' attributes.
+#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed
+#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value
 #' of a Dirichlet boundary condition at boundary nodes added during the triangulation process.
 #' @param segments A #segments-by-2 matrix. Each row contains the row's indices in \code{nodes} of the vertices where the segment starts from and ends to.
 #' Segments are edges that are not splitted during the triangulation process. These are for instance used to define the boundaries
@@ -48,10 +48,10 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
 #' @param holes A #holes-by-2 matrix containing the x and y coordinates of a point internal to each hole of the mesh. These points are used to carve holes
 #' in the triangulation, when the domain has holes.
 #' @param triangles A #triangles-by-3 (when \code{order} = 1) or #triangles-by-6 (when \code{order} = 2) matrix.
-#' This option is used when a triangulation is already available. It specifies the triangles giving the row's indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described 
+#' This option is used when a triangulation is already available. It specifies the triangles giving the row's indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described
 #' at \cr https://www.cs.cmu.edu/~quake/triangle.highorder.html.
-#' In this case the function \code{create.MESH.2D} is used to produce a complete MESH.2D object. 
-#' @param order Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints). 
+#' In this case the function \code{create.MESH.2D} is used to produce a complete MESH.2D object.
+#' @param order Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints).
 #' These are
 #' respectively used for linear (order = 1) and quadratic (order = 2) Finite Elements. Default is \code{order} = 1.
 #' @param verbosity This can be '0', '1' or '2'. It indicates the level of verbosity in the triangulation process. When \code{verbosity} = 0 no message is returned
@@ -62,31 +62,31 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
 #' mesh is a Constrained Delaunay triangulation. This is constructed in a way to preserve segments provided in the input \code{segments} without splitting them. This imput can be used to define the boundaries
 #' of the domain. If this imput is NULL, it generates a triangulation over the
 #' convex hull of the points.
-#' @usage create.MESH.2D(nodes, nodesattributes = NA, segments = NA, holes = NA, 
+#' @usage create.MESH.2D(nodes, nodesattributes = NA, segments = NA, holes = NA,
 #'                      triangles = NA, order = 1, verbosity = 0)
 #' @seealso \code{\link{refine.MESH.2D}}, \code{\link{create.FEM.basis}}
 #' @return An object of the class MESH.2D with the following output:
 #' \item{\code{nodes}}{A #nodes-by-2 matrix containing the x and y coordinates of the mesh nodes.}
 #' \item{\code{nodesmarkers}}{A vector of length #nodes, with entries either '1' or '0'. An entry '1' indicates that the corresponding node is a boundary node; an entry '0' indicates that the corresponding node is not a boundary node.}
-#' \item{\code{nodesattributes}}{nodesattributes A matrix with #nodes rows containing nodes' attributes. 
-#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed  
-#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value 
+#' \item{\code{nodesattributes}}{nodesattributes A matrix with #nodes rows containing nodes' attributes.
+#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed
+#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value
 #' of a Dirichlet boundary condition at boundary nodes added during the triangulation process.}
 #' \item{\code{triangles}}{A #triangles-by-3 (when \code{order} = 1) or #triangles-by-6 (when \code{order} = 2) matrix.
-#' This option is used when a triangulation is already available. It specifies the triangles giving the indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described 
+#' This option is used when a triangulation is already available. It specifies the triangles giving the indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described
 #' at  \cr https://www.cs.cmu.edu/~quake/triangle.highorder.html.}
-#' \item{\code{segmentsmarker}}{A vector of length #segments with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{segments} is a boundary segment;  
+#' \item{\code{segmentsmarker}}{A vector of length #segments with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{segments} is a boundary segment;
 #' an entry '0' indicates that the corresponding segment is not a boundary segment.}
 #' \item{\code{edges}}{A #edges-by-2 matrix containing all the edges of the triangles in the output triangulation. Each row contains the row's indices in \code{nodes}, indicating the nodes where the edge starts from and ends to.}
-#' \item{\code{edgesmarkers}}{A vector of lenght #edges with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{edge} is a boundary edge;  
+#' \item{\code{edgesmarkers}}{A vector of lenght #edges with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{edge} is a boundary edge;
 #' an entry '0' indicates that the corresponding edge is not a boundary edge.}
-#' \item{\code{neighbors}}{A #triangles-by-3 matrix. Each row contains the indices of the three neighbouring triangles. An entry '-1' indicates that 
+#' \item{\code{neighbors}}{A #triangles-by-3 matrix. Each row contains the indices of the three neighbouring triangles. An entry '-1' indicates that
 #' one edge of the triangle is a boundary edge.}
 #' \item{\code{holes}}{A #holes-by-2 matrix containing the x and y coordinates of a point internal to each hole of the mesh. These points are used to carve holes
 #' in the triangulation, when the domain has holes.}
-#' \item{\code{order}}{Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints). 
+#' \item{\code{order}}{Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints).
 #' These are respectively used for linear (order = 1) and quadratic (order = 2) Finite Elements. Default is \code{order} = 1.}
-#' @examples 
+#' @examples
 #' ## Upload the Meuse data
 #' data(MeuseData)
 #' ## Create a triangulation on the convex hull of these data,
@@ -96,28 +96,28 @@ triangulate_native <- function(P, PB, PA, S, SB,H, TR, flags) {
 #' plot(mesh)
 #' ## Upload a domain boundary for these data
 #' data(MeuseBorder)
-#' ## Create a constrained Delaunay triangulation with the provided boundary 
+#' ## Create a constrained Delaunay triangulation with the provided boundary
 #' ## where each datalocation is a triangle vertex
 #' mesh <- create.MESH.2D(nodes = MeuseData[,c(2,3)], segments = MeuseBorder, order = 1)
 #' ## Plot the mesh
 #' plot(mesh)
 
 create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = NA, triangles = NA, order = 1, verbosity = 0)
-{ 
+{
   ##########################
   ###   Input checking   ###
   ##########################
-  
+
   # Triangle finds out which are on the border (see https://www.cs.cmu.edu/~quake/triangle.help.html)
   nodesmarkers = vector(mode = "integer", 0)
   segmentsmarkers = vector(mode = "integer", 0)
-  
+
   nodes = as.matrix(nodes)
   if (ncol(nodes) != 2)
     stop("Matrix of nodes should have 2 columns")
   if (anyDuplicated(nodes))
     stop("Duplicated nodes")
-  
+
   ## If attributes not specified, set them to a matrix with zero columns
   if (any(is.na(nodesattributes))) {
     nodesattributes <- matrix(0, nrow(nodes), 0)
@@ -126,14 +126,14 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
     if (nrow(nodesattributes) != nrow(nodes))
       stop("Point attribute matrix \'nodesattributes\' does not have same number of rows the point matrix \'nodes\'")
   }
-  
+
   ## If boundary nodes not specified, set them to 0
 #   if (any(is.na(nodesmarkers))) {
 #     nodesmarkers <- vector(mode = "integer", 0)
 #   }else{
 #     nodesmarkers = as.vector(nodesmarkers)
 #   }
-    
+
   ## Deal with segments
   if (any(is.na(segments))) {
     segments <- matrix(0, 0, 2)
@@ -143,34 +143,34 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
       stop("Matrix of segments should have 2 columns")
     }
   }
-  
+
   ## If boundary segments not specified, set them to 0
 #   if (any(is.na(segmentsmarkers))) {
 #     segmentsmarkers <- vector(mode = "integer", 0)
 #   }else{
 #     segmentsmarkers = as.vector(segmentsmarkers)
 #   }
-  
+
   ## If hole not specified, set it to empty matrix
   if (any(is.na(holes)))
     holes <- matrix(0, 0, 2)
   holes = as.matrix(holes)
-  
+
   ## If triangles are not already specified
   if(any(is.na(triangles)))
     triangles = matrix(0,nrow = 0, ncol = 3)
   triangles = as.matrix(triangles)
-  
+
   ## Set meshing parameters ##
   flags="ven"
   if(nrow(segments) == 0){
     flags = paste(flags,"c",sep = '')
   }
-  
+
   if(nrow(segments)>0){
     flags = paste(flags,"p",sep = '')
   }
-  
+
   #If order=2 add flag for second order nodes
   if(order == 2){
     flags = paste(flags,"o2",sep = '')
@@ -178,11 +178,11 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
   if(order < 1 || order >2){
     print('Order must be 1 or 2')
   }
-  
+
   if(nrow(triangles) > 0){
     flags = paste(flags,"r",sep = '')
   }
-  
+
   if (verbosity == 0) {
     flags = paste(flags,"Q",sep = '')
   }
@@ -192,11 +192,11 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
   if (verbosity == 2) {
     flags = paste(flags,"VV",sep = '')
   }
-  
+
   out<-NULL
   #If triangles is null it makes the trianglulation
   #If triangle is not null it makes a refinement with no parameter, to compose the mesh object
-  out <- triangulate_native(  
+  out <- triangulate_native(
     nodes,
     nodesmarkers,
     nodesattributes,
@@ -206,7 +206,7 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
     triangles,
     flags
   )
-  
+
   names(out)[1]<-"nodes"
   names(out)[2]<-"nodesmarkers"
   names(out)[3]<-"nodesattributes"
@@ -216,31 +216,31 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
   names(out)[7]<-"edges"
   names(out)[8]<-"edgesmarkers"
   names(out)[9]<-"neighbors"
-  
+
   out[13]<-NULL
   out[12]<-NULL
   out[11]<-NULL
   out[10]<-NULL
-  
+
   out[[10]] = holes
   names(out)[10]<-"holes"
   out[[11]] = order
   names(out)[11]<-"order"
 
-  
+
   class(out)<-"MESH.2D"
-  
+
   return(out)
 }
 
 #' Refine a 2D triangular mesh
-#' 
+#'
 #' @param mesh A MESH.2D object representing the triangular mesh, created by \link{create.MESH.2D}.
 #' @param minimum_angle A scalar specifying a minimun value for the triangles angles.
 #' @param maximum_area A scalar specifying a maximum value for the triangles areas.
 #' @param delaunay A boolean parameter indicating whether or not the output mesh should satisfy the Delaunay condition.
 #' @param verbosity This can be '0', '1' or '2'. It indicates the level of verbosity in the triangulation process.
-#' @description This function refines a Constrained Delaunay triangulation into a Conforming Delaunay triangulation. This is a wrapper of the Triangle library (http://www.cs.cmu.edu/~quake/triangle.html). It can be used to 
+#' @description This function refines a Constrained Delaunay triangulation into a Conforming Delaunay triangulation. This is a wrapper of the Triangle library (http://www.cs.cmu.edu/~quake/triangle.html). It can be used to
 #' refine a mesh created previously with \link{create.MESH.2D}. The algorithm can add Steiner points (points through which the \code{segments} are splitted)
 #' in order to meet the imposed refinement conditions.
 #' @usage refine.MESH.2D(mesh, minimum_angle, maximum_area, delaunay, verbosity)
@@ -248,23 +248,23 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
 #' @return A MESH.2D object representing the refined triangular mesh,  with the following output:
 #' \item{\code{nodes}}{A #nodes-by-2 matrix containing the x and y coordinates of the mesh nodes.}
 #' \item{\code{nodesmarkers}}{A vector of length #nodes, with entries either '1' or '0'. An entry '1' indicates that the corresponding node is a boundary node; an entry '0' indicates that the corresponding node is not a boundary node.}
-#' \item{\code{nodesattributes}}{nodesattributes A matrix with #nodes rows containing nodes' attributes. 
-#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed  
-#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value 
+#' \item{\code{nodesattributes}}{nodesattributes A matrix with #nodes rows containing nodes' attributes.
+#' These are passed unchanged to the output. If a node is added during the triangulation process or mesh refinement, its attributes are computed
+#' by linear interpolation using the attributes of neighboring nodes. This functionality is for instance used to compute the value
 #' of a Dirichlet boundary condition at boundary nodes added during the triangulation process.}
 #' \item{\code{triangles}}{A #triangles-by-3 (when \code{order} = 1) or #triangles-by-6 (when \code{order} = 2) matrix.
-#' This option is used when a triangulation is already available. It specifies the triangles giving the row's indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described 
+#' This option is used when a triangulation is already available. It specifies the triangles giving the row's indices in \code{nodes} of the triangles' vertices and (when \code{nodes} = 2) also if the triangles' edges midpoints. The triangles' vertices and midpoints are ordered as described
 #' at \cr  https://www.cs.cmu.edu/~quake/triangle.highorder.html.}
 #' \item{\code{edges}}{A #edges-by-2 matrix. Each row contains the row's indices of the nodes where the edge starts from and ends to.}
-#' \item{\code{edgesmarkers}}{A vector of lenght #edges with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{edge} is a boundary edge;  
+#' \item{\code{edgesmarkers}}{A vector of lenght #edges with entries either '1' or '0'. An entry '1' indicates that the corresponding element in \code{edge} is a boundary edge;
 #' an entry '0' indicates that the corresponding edge is not a boundary edge.}
-#' \item{\code{neighbors}}{A #triangles-by-3 matrix. Each row contains the indices of the three neighbouring triangles. An entry '-1' indicates that 
+#' \item{\code{neighbors}}{A #triangles-by-3 matrix. Each row contains the indices of the three neighbouring triangles. An entry '-1' indicates that
 #' one edge of the triangle is a boundary edge.}
 #' \item{\code{holes}}{A #holes-by-2 matrix containing the x and y coordinates of a point internal to each hole of the mesh. These points are used to carve holes
 #' in the triangulation, when the domain has holes.}
 #' \item{\code{order}}{Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints).
 #' These are respectively used for linear (order = 1) and quadratic (order = 2) Finite Elements. Default is \code{order} = 1.}
-#' @examples 
+#' @examples
 #' ## Upload the Meuse data and a domain boundary for these data
 #' data(MeuseData)
 #' data(MeuseBorder)
@@ -277,28 +277,28 @@ create.MESH.2D <- function(nodes, nodesattributes = NA, segments = NA, holes = N
 #' plot(mesh_refine)
 
 refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay = FALSE, verbosity = 0)
-{ 
+{
   if(class(mesh) !="MESH.2D")
     stop("Sorry, this function is implemented just for MESH.2D class ")
-  
-  flags="rpven" 
-  
+
+  flags="rpven"
+
   if(!is.na(minimum_angle)){
     flags <- paste(flags, "q", sprintf("%.12f", minimum_angle), sep='')
   }
-  
+
   if(!is.na(maximum_area)){
     flags <- paste(flags, "a", sprintf("%.12f", maximum_area), sep='')
   }
-  
+
   if(delaunay){
     flags <- paste(flags, "D", sep='')
   }
-  
+
   if(mesh$order==2){
     flags <- paste(flags, "o2", sep='')
   }
-  
+
   if (verbosity == 0) {
     flags = paste(flags,"Q",sep = '')
   }
@@ -308,11 +308,11 @@ refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
   if (verbosity == 2) {
     flags = paste(flags,"VV",sep = '')
   }
-  
+
   # Triangle finds out which are on the border (see https://www.cs.cmu.edu/~quake/triangle.help.html)
   mesh$nodesmarkers = vector(mode = "integer", 0)
   mesh$segmentsmarkers = vector(mode = "integer", 0)
-  
+
   out<-NULL
   #If triangles is null it makes the trianglulation
   #If triangle is not null it makes a refinement with no parameter, to compose the mesh object
@@ -326,7 +326,7 @@ refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
     mesh$triangles,
     flags
   )
-  
+
   names(out)[1]<-"nodes"
   names(out)[2]<-"nodesmarkers"
   names(out)[3]<-"nodesattributes"
@@ -336,19 +336,19 @@ refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
   names(out)[7]<-"edges"
   names(out)[8]<-"edgesmarkers"
   names(out)[9]<-"neighbors"
-  
+
   out[13]<-NULL
   out[12]<-NULL
   out[11]<-NULL
   out[10]<-NULL
-  
+
   out[[10]] = mesh$holes
   names(out)[10]<-"holes"
   out[[11]] = mesh$order
   names(out)[11]<-"order"
-  
+
   class(out)<-"MESH.2D"
-  
+
   return(out)
 }
 
@@ -362,7 +362,7 @@ refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
 #' \item{\code{ntriangles}}{The #triangles contained in the mesh}
 #' \item{\code{nodes}}{A #nodes-by-3 matrix containing the x,y and z coordinate for each point of the mesh}
 #' \item{\code{triangles}}{A #triangles-by-3*order matrix specifying the indices of the nodes in each triangle of the mesh}
-#' \item{\code{order}}{Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints). 
+#' \item{\code{order}}{Either '1' or '2'. It specifies wether each mesh triangle should be represented by 3 nodes (the triangle' vertices) or by 6 nodes (the triangle's vertices and midpoints).
 #' These are respectively used for linear (order = 1) and quadratic (order = 2) Finite Elements. Default is \code{order} = 1.}
 #' @examples
 #' #Load the matrix nodes and triangles
@@ -375,14 +375,14 @@ refine.MESH.2D<-function(mesh, minimum_angle = NA, maximum_area = NA, delaunay =
 #'
 #' #Create the triangulated mesh from the connectivity matrix and nodes locations
 #' mesh=create.MESH.2.5D(nodes,triangles)
-#' 
+#'
 
 create.MESH.2.5D<- function(nodes, triangles, order = 1)
 {
   nnodes = dim(nodes)[1]
 
   ntriangles = dim(triangles)[1]
-  
+
   if(order==1 & dim(triangles)[2]== 3){
     out = list(nnodes=nnodes, ntriangles=ntriangles, nodes=as.matrix(nodes), triangles = as.matrix(triangles), order=as.integer(order))
   }
@@ -396,7 +396,7 @@ create.MESH.2.5D<- function(nodes, triangles, order = 1)
   else{
     stop("The number of columns of triangles matrix is not consistent with the order parameter")
   }
-  
+
   class(out)<-"MESH.2.5D"
 
   return(out)
@@ -452,7 +452,7 @@ second.order.MESH.2.5D<-function(nodes, triangles){
           index<-index+1;
           V<-rbind(V,point)
           T[i,3+side]<-index;
-# 
+#
 #           if(!is.null(bc)&&isBC[side]==1){
 #             bc<-c(bc,index)
 #          }
@@ -469,7 +469,7 @@ second.order.MESH.2.5D<-function(nodes, triangles){
 #    class(out)<-"MESH.2.5D"
 #    retlist = list(mesh = out, bc_index=bc)
     return(out)
-  
+
 }
 
 #' Create a \code{MESH.3D} object from the connectivty matrix and nodes locations
@@ -482,7 +482,7 @@ second.order.MESH.2.5D<-function(nodes, triangles){
 #' \item{\code{ntetrahedrons}}{The #tetrahedrons contained in the mesh}
 #' \item{\code{nodes}}{A #nodes-by-3 matrix containing the x,y and z coordinate for each point of the mesh}
 #' \item{\code{tetrahedrons}}{A #tetrahedrons-by-4*order matrix specifying the indices of the nodes in each triangle of the mesh}
-#' \item{\code{order}}{It specifies the order of the Finite Element basis. When order = 1, each mesh tetrahedron is represented by 4 nodes (the tetrahedron vertices). 
+#' \item{\code{order}}{It specifies the order of the Finite Element basis. When order = 1, each mesh tetrahedron is represented by 4 nodes (the tetrahedron vertices).
 #' These are respectively used for linear (order = 1) Finite Elements. Currently only \code{order} = 1 is implemented, and is the default option.}
 #' @examples
 #' #Load the matrix nodes and tetrahedrons
@@ -495,25 +495,25 @@ second.order.MESH.2.5D<-function(nodes, triangles){
 #'
 #' #Create the triangulated mesh from the connectivity matrix and nodes locations
 #' mesh=create.MESH.3D(nodes,tetrahedrons)
-#' 
+#'
 
 create.MESH.3D<- function(nodes, tetrahedrons, order = 1)
 {
   if(order!=1)
     stop("Sorry, for the moment only order 1 mesh creation is available. Please set order=1")
-  
+
   nnodes = dim(nodes)[1]
-  
+
   ntetrahedrons = dim(tetrahedrons)[1]
-  
+
   if(dim(tetrahedrons)[2]!= 4*order){
     if (order==1)
       stop("The matrix 'tetrahedrons' has the wrong number of columns. See second.order.mesh(...)")
     stop("The matrix 'tetrahedrons' has wrong number of columns. Should be 4*order \n")
   }
   out = list(nnodes=nnodes, ntetrahedrons=ntetrahedrons, nodes=as.matrix(nodes), tetrahedrons = as.matrix(tetrahedrons), order=as.integer(order))
-  
+
   class(out)<-"MESH.3D"
-  
+
   return(out)
 }

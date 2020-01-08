@@ -536,7 +536,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
 	/* No outputs */
 	id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-
+	id.ICNTL(14)=200;
 	id.ICNTL(20)=1; id.ICNTL(30)=1;
 
 	/* Call the MUMPS package. */
@@ -639,7 +639,77 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	// Resolution of the system
 	// system_factorize();
 
-	MatrixXr x = system_solve(b);
+	// MatrixXr x = system_solve(b);
+	Real *values = matrixNoCov_.valuePtr();
+	UInt *inner = matrixNoCov_.innerIndexPtr();
+	UInt *outer = matrixNoCov_.outerIndexPtr();
+
+	UInt nz = matrixNoCov_.nonZeros();
+
+	UInt nzj;
+	UInt counter = 0;
+	UInt *jcn = new UInt[nz];
+
+	for(UInt i = 1; i < 2*nnodes+1; ++i)
+	{
+		nzj = outer[i]-outer[i-1];
+
+		for(UInt j=0;j<nzj;++j)
+		{
+			jcn[counter+j] = i;
+			//cout << jcn[counter+j] << " ";
+		}
+		counter+=nzj;
+	}
+
+	UInt *irn = new UInt[nz];
+
+	for(UInt i=0; i<nz; ++i)
+	{
+		irn[i]=inner[i]+1;
+		//cout << irn[i] << " ";
+	}
+
+	DMUMPS_STRUC_C id;
+
+
+	UInt nrhs = b.cols();
+	UInt lrhs = b.rows();
+
+	Real* rhs = b.data();
+
+	// Initialize a MUMPS instance. Use MPI_COMM_WORLD
+	id.job=JOB_INIT; id.par=1; id.sym=0;id.comm_fortran=USE_COMM_WORLD;
+	dmumps_c(&id);
+
+	//Define the problem on the host
+	id.n = b.rows(); id.nz = nz; id.irn=irn; id.jcn=jcn;
+	id.a = values;
+	id.lrhs = lrhs; id.nrhs = nrhs;
+	id.rhs = rhs;
+
+	#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+	/* No outputs */
+	id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+	id.ICNTL(14)=1000;
+	id.ICNTL(20)=0;
+
+	/* Call the MUMPS package. */
+	id.job=6;
+	dmumps_c(&id);
+
+	/* Terminate instance */
+	id.job=JOB_END; dmumps_c(&id);
+
+	delete[] irn;
+	delete[] jcn;
+	//std::cout<<"delete ok"<<std::endl;
+
+	MatrixXr x(b.rows(),b.cols());
+
+	for(UInt j = 0; j < nrhs; ++j)
+		for(UInt i = 0; i < lrhs; ++i)
+			x(i,j) = rhs[i+j*lrhs];
 
 	MatrixXr uTB = u.transpose()*B_;
 	VectorXr edf_vect(nrealizations);
@@ -786,7 +856,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		{
 			Real lambdaS = regressionData_.getLambdaS()[s];
 			Real lambdaT = regressionData_.getLambdaT()[t];
-
+			_rightHandSide=rhs;
 			SpMat R1k_lambda = (-lambdaS)*(R1k_+lambdaT*LR0k_);
 			SpMat R0k_lambda = (-lambdaS)*R0k_;
 			SpMat BTB_lambda ;
@@ -805,7 +875,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			{
 				for(UInt i = 0; i<regressionData_.getInitialValues().rows(); i++)
 				{
-					_rightHandSide(M*N+i) = rhs(M*N+i)-lambdaS*rhs_ic_correction_(i);
+					_rightHandSide(M*N+i) -= lambdaS*rhs_ic_correction_(i);
 				}
 			}
 
@@ -816,9 +886,8 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 			system_factorize();
 			//
-			_solution(s,t).resize(2*M*N);
-		  // _solution(s,t) = this->template system_solve(this->_rightHandSide);
-			Mumps::template solve(matrixNoCov_,_rightHandSide,_solution(s,t));
+		  _solution(s,t) = this->template system_solve(this->_rightHandSide);
+			// Mumps::template solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//
 			if(regressionData_.computeDOF())
 			{

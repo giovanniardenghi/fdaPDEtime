@@ -66,7 +66,7 @@ eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
 #' @references
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 
-eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambaS=1,lambdaT=1)
+eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1)
 {
   if (is.null(FEM_time))
     stop("FEM_time required;  is NULL.")
@@ -108,6 +108,8 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambaS=1,
       warning("the first value of lambdaT is being used")
     f = FEM_time(coeff=array(FEM_time$coeff[,lambdaS,lambdaT]),time_mesh=FEM_time$mesh_time,FEMbasis=FEM_time$FEMbasis,FLAG_PARABOLIC=FEM_time$FLAG_PARABOLIC)
   }
+  else
+    f = FEM_time
 
   res <- NULL
 

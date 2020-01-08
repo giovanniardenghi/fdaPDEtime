@@ -427,7 +427,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		}
 		for(UInt k=0; k<n; k++)
 		{
-			if(phi.coeff(k,i)!=0)
+			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
 			{
 				if (ndim==3)
 				{
@@ -447,8 +447,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim);
 		for(UInt k=0; k<indices.size(); ++k)
 		{
-			if(!ISNA(REAL(result)[indices[k]]))
-				REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
+			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
 		}
 		XX.clear();YY.clear();ZZ.clear();indices.clear();
 	}
@@ -504,10 +503,13 @@ SEXP eval_FEM_time_nodes(SEXP Rns, SEXP Rmesh_time, SEXP Rtime, SEXP Rcoef, SEXP
 	}
 	for(UInt i=1; i < M; i++)
 	{
-		for(UInt k=0; k<ns; ++k)
+    if(phi(i)!=0)
 		{
-			REAL(result)[k] = REAL(result)[k] + REAL(Rcoef)[k+ns*i]*phi(i);
-		}
+      for(UInt k=0; k<ns; ++k)
+  		{
+  			REAL(result)[k] = REAL(result)[k] + REAL(Rcoef)[k+ns*i]*phi(i);
+  		}
+    }
 	}
 
 	UNPROTECT(1);

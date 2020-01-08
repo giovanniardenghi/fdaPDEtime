@@ -71,7 +71,7 @@ RegressionDataTime::RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SE
 
 	UInt length_ic = Rf_length(Ric);
 	ic_.resize(length_ic);
-	for (UInt i = 0; i<length_ic; ++i)  ic_[i]=REAL(Ric)[i];
+	for (UInt i = 0; i<length_ic; ++i)  ic_(i)=REAL(Ric)[i];
 
 }
 
@@ -117,12 +117,12 @@ void RegressionDataTime::setObservations(SEXP Robservations)
 		{
 			if(!ISNA(REAL(Robservations)[i]))
 			{
-				observations_[i] = REAL(Robservations)[i];
+				observations_(i) = REAL(Robservations)[i];
 				observations_indices_.push_back(i);
 			}
 			else
 			{
-				observations_[i] = 0.0;
+				observations_(i) = 0.0;
 				observations_na_.push_back(i);
 			}
 		}
@@ -132,7 +132,7 @@ void RegressionDataTime::setObservations(SEXP Robservations)
 		locations_by_nodes_ = false;
 		for(auto i=0;i<n_obs_;++i)
 		{
-			observations_[i] = REAL(Robservations)[i];
+			observations_(i) = REAL(Robservations)[i];
 		}
 	}
 

@@ -225,8 +225,9 @@ class Mumps{
 
 		//Real *rhs = b.array();
     Real rhs[b.rows()*b.cols()];
-    for(UInt i = 0; i < b.rows()*b.cols(); ++i) rhs[i] = b(i);
-
+		for(UInt j = 0; j < b.cols(); ++j)
+			for(UInt i = 0; i < b.rows(); ++i)
+				rhs[i+j*b.rows()] = b(i,j);
     /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
     id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
     dmumps_c(&id);
@@ -239,6 +240,7 @@ class Mumps{
     #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
     /* No outputs */
     id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+		id.ICNTL(14)=200;
     /* Call the MUMPS package. */
     id.job=6;
     dmumps_c(&id);
@@ -248,7 +250,9 @@ class Mumps{
 			for(UInt i = 0; i < b.rows(); ++i)
 				x(i,j) = rhs[i+j*b.rows()];
 
-     };
+		delete[] irn;
+		delete[] jcn;
+   };
 };
 
 
