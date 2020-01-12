@@ -44,22 +44,12 @@ template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename I
 void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::addNA()
 {
 
-	UInt id;
-
-	UInt nnodes = mesh_.num_nodes();
-	//std::cout << "nnodes: " << nnodes << std::endl;
-
-	const std::vector<UInt>& observations_na= regressionData_.getObservationsNA();
-
-	UInt n_NA = observations_na.size();
-
-	for(UInt i = 0; i < n_NA; ++i)
+	std::vector<UInt> obsna=regressionData_.getObservationsNA();
+	for(UInt k:obsna)
 	{
-		id = observations_na[i];
-		matrixNoCov_.coeffRef(id, id) = 0;
+		B_.prune([&k](UInt i, UInt j, float) { return i!=k; });
 	}
-	//std::cout << _solution << std::endl;
-	matrixNoCov_.makeCompressed();
+
 }
 
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
@@ -269,7 +259,7 @@ MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTim
 
 	// Resolution of the system matrixNoCov * x1 = b
 	// MatrixXr x1 = matrixNoCovdec_.solve(b);
-	VectorXr x1(b.rows());
+	VectorXr x1(matrixNoCov_.cols());
 	Mumps::solve(matrixNoCov_,b,x1);
 
 	if (regressionData_.getCovariates().rows() != 0) {
@@ -772,6 +762,8 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	// 	}
 	B_ = kroneckerProduct(phi,psi);
 	B_.makeCompressed();
+	addNA();
+	
 	R1k_ = kroneckerProduct(IM,R1);
 	R1k_.makeCompressed();
 	R0k_ = kroneckerProduct(IM,R0);
@@ -848,7 +840,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 				}
 			}
 
-			addNA();
+
 			//Applying boundary conditions if necessary
 			if(regressionData_.getDirichletIndices().size() != 0)  // if areal data NO BOUNDARY CONDITIONS
 				addDirichletBC();

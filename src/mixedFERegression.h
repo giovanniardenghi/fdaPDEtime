@@ -166,7 +166,7 @@ class SpaceTimeRegression
 	MatrixXr LeftMultiplybyQ(const MatrixXr& u);
 	//! A function which adds Dirichlet boundary conditions before solving the system ( Remark: BC for areal data are not implemented!)
 	void addDirichletBC();
-	//! A function which takes care of missing values in the final system
+	//! A function which takes care of missing values setting to 0 the corresponding rows of B_
 	void addNA();
 	//! A member function which builds the Q matrix
 	// void setQ();
