@@ -17,6 +17,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	UInt N = mesh_.num_nodes();
 	UInt M = regressionData_.getFlagParabolic() ? mesh_time_.size()-1 : mesh_time_.size()+SPLINE_DEGREE-1;
+	UInt shift= regressionData_.getFlagParabolic() ? N : 0;
 
 	const std::vector<UInt>& bc_indices = regressionData_.getDirichletIndices();
 	const std::vector<Real>& bc_values = regressionData_.getDirichletValues();
@@ -26,7 +27,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	for( auto i=0; i<nbc_indices; i++)
 	 {
-			id1=bc_indices[i];
+			id1=bc_indices[i]-shift;
 			id3=id1+N*M;
 
 			matrixNoCov_.coeffRef(id1,id1)=pen;
@@ -763,7 +764,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	B_ = kroneckerProduct(phi,psi);
 	B_.makeCompressed();
 	addNA();
-	
+
 	R1k_ = kroneckerProduct(IM,R1);
 	R1k_.makeCompressed();
 	R0k_ = kroneckerProduct(IM,R0);

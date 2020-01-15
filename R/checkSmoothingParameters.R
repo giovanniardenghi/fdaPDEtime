@@ -219,14 +219,21 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'BC_values' must be a column vector")
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
-    if(class(FEMbasis$mesh) == "MESH.2D"){
-      if(sum(BC$BC_indices>nrow(nrow(FEMbasis$mesh$nodes))) > 0)
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
-    }else if((class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D")){
-      if(sum(BC$BC_indices>FEMbasis$mesh$nnodes) > 0)
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
-    }
+
+    N=ifelse(class(FEMbasis$mesh) == "MESH.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
+    #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
+    if(min(BC$BC_indices)<0)
+      stop("'BC_indices' elements must be non negative")
+    if(max(BC$BC_indices)>(N*length(time_mesh)))
+        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
+    if (FLAG_PARABOLIC==TRUE)
+      if((min(BC$BC_indices)<N)
+        stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
   }
+
+
+  if(max(BC$BC_indices) > nrow(FEMbasis$mesh$nodes)*length(time_mesh))
+      stop("At least one index in 'BC_indices' larger then the system dimension"
 
   if(!is.null(IC))
   {
