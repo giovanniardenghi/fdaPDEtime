@@ -122,7 +122,7 @@ class SpaceTimeRegression
 	// SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
 	//! kron(IM,Ps) (separable version)
-	// SpMat Psk_;
+	SpMat Psk_;
 	//! kron(Pt,IN) (separable version)
 	SpMat Ptk_;
 	//! kron(IM,R1)
@@ -145,8 +145,8 @@ class SpaceTimeRegression
 	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
 	bool isWTWfactorized_=false;
-	// bool isRcomputed_=false;
-	// Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
+	bool isRcomputed_=false;
+	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
 
 	// MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	// MatrixXr H_; //! The hat matrix of the regression

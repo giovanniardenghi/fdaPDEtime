@@ -110,32 +110,21 @@ void RegressionDataTime::setObservations(SEXP Robservations)
 	observations_indices_.reserve(n_obs_);
 
 	UInt count = 0;
-	if(locations_.size() == 0 && nRegions_ == 0)
+	locations_by_nodes_ = (locations_.size() == 0 && nRegions_ == 0) ? true : false;
+
+	for(auto i=0;i<n_obs_;++i)
 	{
-		locations_by_nodes_ = true;
-		for(auto i=0;i<n_obs_;++i)
-		{
-			if(!ISNA(REAL(Robservations)[i]))
-			{
-				observations_(i) = REAL(Robservations)[i];
-				observations_indices_.push_back(i);
-			}
-			else
-			{
-				observations_(i) = 0.0;
-				observations_na_.push_back(i);
-			}
-		}
-	}
-	else // locations_.size() > 0 NOR nRegions_ > 0
-	{
-		locations_by_nodes_ = false;
-		for(auto i=0;i<n_obs_;++i)
+		if(!ISNA(REAL(Robservations)[i]))
 		{
 			observations_(i) = REAL(Robservations)[i];
+			observations_indices_.push_back(i);
+		}
+		else
+		{
+			observations_(i) = 0.0;
+			observations_na_.push_back(i);
 		}
 	}
-
 	//std::cout<<"Observations #"<<observations_.size()<<std::endl<<observations_<<std::endl;
 	//for(auto i=0;i<observations_indices_.size();++i)	std::cout<<observations_indices_[i]<<std::endl;
 }

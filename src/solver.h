@@ -186,39 +186,23 @@ class Mumps{
 		const UInt *inner = A.innerIndexPtr();
 		const UInt *outer = A.outerIndexPtr();
 
-		UInt nz = A.nonZeros();
 		UInt n = A.cols();
 
-		UInt nzj;
-		UInt counter = 0;
-		UInt *jcn = new UInt[nz];
+		std::vector<int> irn;
+		std::vector<int> jcn;
+		std::vector<double> a;
 
-		for(UInt i = 1; i <n+1; ++i)
+		for (int j=0; j<A.outerSize(); ++j)
 		{
-	  		nzj = outer[i]-outer[i-1];
-
-	  		for(UInt j=0;j<nzj;++j)
+			for (SpMat::InnerIterator it(A,j); it; ++it)
 			{
-			    jcn[counter+j] = i;
-			    //cout << jcn[counter+j] << " ";
+				if(it.col()>=it.row())
+				{
+					irn.push_back(it.row()+1);
+					jcn.push_back(it.col()+1);
+					a.push_back(it.value());
+				}
 			}
-	  		counter+=nzj;
-		}
-
-		UInt *irn = new UInt[nz];
-
-		for(UInt i=0; i<nz; ++i)
-		{
-	    	irn[i]=inner[i]+1;
-	    	//cout << irn[i] << " ";
-		}
-
-		Real *a = new Real[nz];
-
-		for(UInt i=0; i<nz; ++i)
-		{
-	    	a[i]=values[i];
-	    	//cout << irn[i] << " ";
 		}
 
     DMUMPS_STRUC_C id;
@@ -229,12 +213,12 @@ class Mumps{
 			for(UInt i = 0; i < b.rows(); ++i)
 				rhs[i+j*b.rows()] = b(i,j);
     /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
-    id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
+    id.job=JOB_INIT; id.par=1; id.sym=2; id.comm_fortran=USE_COMM_WORLD;
     dmumps_c(&id);
     /* Define the problem on the host */
 
-		id.n = n; id.nz =nz; id.irn=irn; id.jcn=jcn;
-		id.a = a;
+		id.n = n; id.nz =irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
+		id.a = a.data();
 		id.lrhs = b.rows(); id.nrhs = b.cols(); id.rhs = rhs;
 
     #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
@@ -250,8 +234,6 @@ class Mumps{
 			for(UInt i = 0; i < b.rows(); ++i)
 				x(i,j) = rhs[i+j*b.rows()];
 
-		delete[] irn;
-		delete[] jcn;
    };
 };
 
