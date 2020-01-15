@@ -103,6 +103,7 @@ RegressionDataTimeEllipticSpaceVarying::RegressionDataTimeEllipticSpaceVarying(S
 					 K_(RK), beta_(Rbeta), c_(Rc), u_(Ru)
 {this->isSpaceVarying=TRUE;}
 
+
 void RegressionDataTime::setObservations(SEXP Robservations)
 {
 	UInt n_obs_ = Rf_length(Robservations);

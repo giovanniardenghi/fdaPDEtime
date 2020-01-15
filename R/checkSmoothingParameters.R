@@ -20,8 +20,6 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
   {
     if(any(is.na(locations)))
       stop("Missing values not admitted in 'locations'.")
-    if(any(is.na(observations)))
-      stop("Missing values not admitted in 'observations' when 'locations' are specified.")
   }
 
   if (is.null(time_locations) && is.null(time_mesh))
@@ -137,6 +135,23 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
   #   }
   # }
+  if(is.null(locations))
+  {
+    if(!is.null(time_locations))
+      if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*nrow(time_locations) != nrow(observations))
+        stop("'locations' and 'observations' have incompatible size;")
+
+    if(is.null(time_locations))
+    {
+      if(FLAG_PARABOLIC)
+        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*(nrow(time_mesh)-1) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+      if(!FLAG_PARABOLIC)
+        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*nrow(time_mesh) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+    }
+  }
+
   if(!is.null(locations))
   {
     if(ncol(locations) != ndim)
