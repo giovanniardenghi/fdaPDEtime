@@ -122,7 +122,7 @@ class SpaceTimeRegression
 	// SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
 	//! kron(IM,Ps) (separable version)
-	// SpMat Psk_;
+	SpMat Psk_;
 	//! kron(Pt,IN) (separable version)
 	SpMat Ptk_;
 	//! kron(IM,R1)
@@ -145,8 +145,8 @@ class SpaceTimeRegression
 	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
 	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
 	bool isWTWfactorized_=false;
-	// bool isRcomputed_=false;
-	// Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
+	bool isRcomputed_=false;
+	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
 
 	// MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	// MatrixXr H_; //! The hat matrix of the regression
@@ -156,12 +156,16 @@ class SpaceTimeRegression
 	VectorXr _rightHandSide;         //!A Eigen::VectorXr: Stores the system right hand side.
 	MatrixXv _solution; //!A Eigen::VectorXr: Stores the system solution.
 	MatrixXr _dof;          //! A Eigen::MatrixXr storing the computed dofs
-
+	MatrixXr _GCV;	 //! A Eigen::MatrixXr storing the computed GCV
+	UInt bestLambdaS_=0;	//!Stores the index of the lambdaS of best GCV
+	UInt bestLambdaT_=0;	//!Stores the index of the lambdaT of best GCV
+	Real _bestGCV=10e20;	//!Stores the value of the bestGCV
+	MatrixXv _beta;		//! A Eigen::MatrixXv storing the computed beta coefficients
 
 	//! A member function computing the no-covariates version of the system matrix
 	void buildMatrixNoCov(const SpMat& B,  const SpMat& SWblock,  const SpMat& SEblock);
 	//! A member function computing the matrix to be added to matrixNoCov_ to obtain the full system matrix
-	void buildMatrixOnlyCov(const SpMat& B, const MatrixXr& H);
+	// void buildMatrixOnlyCov(const SpMat& B, const MatrixXr& H);
 	//! A function that given a vector u, performs Q*u efficiently
 	MatrixXr LeftMultiplybyQ(const MatrixXr& u);
 	//! A function which adds Dirichlet boundary conditions before solving the system ( Remark: BC for areal data are not implemented!)
@@ -206,6 +210,16 @@ public:
 	MatrixXv const & getSolution() const{return _solution;}
 	//! A function returning the computed dofs of the model
 	MatrixXr const & getDOF() const{return _dof;}
+	//! A function returning the computed GCV of the model
+	MatrixXr const & getGCV() const{return _GCV;}
+	//! A function returning the computed beta coefficients of the model
+	MatrixXv const & getBeta() const{return _beta;}
+	//! A function returning the index of the lambdaS of the best GCV
+	UInt getBestLambdaS(){return bestLambdaS_;}
+	//! A function returning the index of the lambdaT of the best GCV
+	UInt getBestLambdaT(){return bestLambdaT_;}
+
+
 };
 
 

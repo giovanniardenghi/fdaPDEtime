@@ -178,76 +178,63 @@ class BiCGSTABILUT{
 
 class Mumps{
 	public:
-    static void solve(SpMat const & A, VectorXr const & b, VectorXr &x )
+		template<typename Derived1,typename Derived2>
+    static void solve(SpMat const & A,const Eigen::MatrixBase<Derived1> & b, Eigen::MatrixBase<Derived2> & x )
 	{
 
 		const Real *values = A.valuePtr();
 		const UInt *inner = A.innerIndexPtr();
 		const UInt *outer = A.outerIndexPtr();
 
-		UInt nz = A.nonZeros();
 		UInt n = A.cols();
 
-		UInt nzj;
-		UInt counter = 0;
-		UInt *jcn = new UInt[nz];
+		std::vector<int> irn;
+		std::vector<int> jcn;
+		std::vector<double> a;
 
-		for(UInt i = 1; i <n+1; ++i)
+		for (int j=0; j<A.outerSize(); ++j)
 		{
-	  		nzj = outer[i]-outer[i-1];
-
-	  		for(UInt j=0;j<nzj;++j)
+			for (SpMat::InnerIterator it(A,j); it; ++it)
 			{
-			    jcn[counter+j] = i;
-			    //cout << jcn[counter+j] << " ";
+				if(it.col()>=it.row())
+				{
+					irn.push_back(it.row()+1);
+					jcn.push_back(it.col()+1);
+					a.push_back(it.value());
+				}
 			}
-	  		counter+=nzj;
 		}
 
-		UInt *irn = new UInt[nz];
-
-		for(UInt i=0; i<nz; ++i)
-		{
-	    	irn[i]=inner[i]+1;
-	    	//cout << irn[i] << " ";
-		}
-
-		Real *a = new Real[nz];
-
-		for(UInt i=0; i<nz; ++i)
-		{
-	    	a[i]=values[i];
-	    	//cout << irn[i] << " ";
-		}
-
-	    DMUMPS_STRUC_C id;
+    DMUMPS_STRUC_C id;
 
 		//Real *rhs = b.array();
-        Real *rhs = new Real[n];
-        for(UInt i = 0; i < n; ++i) rhs[i] = b(i);
+    Real rhs[b.rows()*b.cols()];
+		for(UInt j = 0; j < b.cols(); ++j)
+			for(UInt i = 0; i < b.rows(); ++i)
+				rhs[i+j*b.rows()] = b(i,j);
+    /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
+    id.job=JOB_INIT; id.par=1; id.sym=2; id.comm_fortran=USE_COMM_WORLD;
+    dmumps_c(&id);
+    /* Define the problem on the host */
 
-	    /* Initialize a MUMPS instance. Use MPI_COMM_WORLD */
-	    id.job=JOB_INIT; id.par=1; id.sym=0; id.comm_fortran=USE_COMM_WORLD;
-	    dmumps_c(&id);
-	    /* Define the problem on the host */
+		id.n = n; id.nz =irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
+		id.a = a.data();
+		id.lrhs = b.rows(); id.nrhs = b.cols(); id.rhs = rhs;
 
-		id.n = n; id.nz =nz; id.irn=irn; id.jcn=jcn;
-		id.a = a; id.rhs = rhs;
+    #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+    /* No outputs */
+    id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+		id.ICNTL(14)=200;
+    /* Call the MUMPS package. */
+    id.job=6;
+    dmumps_c(&id);
+    id.job=JOB_END; dmumps_c(&id); /* Terminate instance */
 
-	    #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-	    /* No outputs */
-	    id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-	    /* Call the MUMPS package. */
-	    id.job=6;
-	    dmumps_c(&id);
-	    id.job=JOB_END; dmumps_c(&id); /* Terminate instance */
+		for(UInt j = 0; j < b.cols(); ++j)
+			for(UInt i = 0; i < b.rows(); ++i)
+				x(i,j) = rhs[i+j*b.rows()];
 
-		for(UInt i=0; i<n; ++i)
-		{
-	    	x(i)=rhs[i];
-		}
-
-     };
+   };
 };
 
 

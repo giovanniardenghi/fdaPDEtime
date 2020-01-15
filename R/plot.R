@@ -1,4 +1,4 @@
-plot.FEM_time = function(x,t)
+plot.FEM_time = function(x,t,lambdaS=1,lambdaT=1)
 {
   if(class(x) != 'FEM_time')
     stop("x is not of class 'FEM_time'")
@@ -8,13 +8,18 @@ plot.FEM_time = function(x,t)
     stop("time must be a single value")
   if(t<x$mesh_time[1] || t>x$mesh_time[length(x$mesh_time)])
     stop("time provided out of the 'time_mesh'")
+  if(dim(x$coeff)[2]>1 && lambdaS==1)
+    warning("the first value of lambdaS is being used")
+  if(dim(x$coeff)[3]>1 && lambdaT==1)
+    warning("the first value of lambdaT is being used")
+
   storage.mode(t) <- "double"
   storage.mode(x$FEMbasis$nbasis) <- "integer"
   storage.mode(x$mesh_time) <- "double"
   storage.mode(x$coeff) <- "double"
   storage.mode(x$FLAG_PARABOLIC) <- "integer"
 
-  solution <- .Call("eval_FEM_time_nodes",x$FEMbasis$nbasis,x$mesh_time,t,x$coeff,x$FLAG_PARABOLIC,package = "fdaPDEtime")
+  solution <- .Call("eval_FEM_time_nodes",x$FEMbasis$nbasis,x$mesh_time,t,x$coeff[,lambdaS,lambdaT],x$FLAG_PARABOLIC,package = "fdaPDEtime")
   plot = FEM(solution,x$FEMbasis)
   plot.FEM(plot)
 }

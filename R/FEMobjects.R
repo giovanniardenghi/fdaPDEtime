@@ -107,8 +107,7 @@ FEM_time<-function(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
     stop("FEMbasis required;  is NULL.")
   if(class(FEMbasis) != "FEMbasis")
     stop("FEMbasis not of class 'FEMbasis'")
-  coeff = as.matrix(coeff)
-  if(nrow(coeff) != (FEMbasis$nbasis*M))
+  if(dim(coeff)[1] != (FEMbasis$nbasis*M))
     stop("Number of row of 'coeff' different from number of basis")
 
   fclass = NULL

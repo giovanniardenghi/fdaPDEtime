@@ -66,7 +66,7 @@ eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
 #' @references
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 
-eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL)
+eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1)
 {
   if (is.null(FEM_time))
     stop("FEM_time required;  is NULL.")
@@ -100,23 +100,32 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL)
       locations <- matrix(nrow=0, ncol=1)
     }
   }
+  if(dim(FEM_time$coeff)[2]>1||dim(FEM_time$coeff)[3]>1)
+  {
+    if(dim(FEM_time$coeff)[2]>1 && lambdaS==1)
+      warning("the first value of lambdaS is being used")
+    if(dim(FEM_time$coeff)[3]>1 && lambdaT==1)
+      warning("the first value of lambdaT is being used")
+    f = FEM_time(coeff=array(FEM_time$coeff[,lambdaS,lambdaT]),time_mesh=FEM_time$mesh_time,FEMbasis=FEM_time$FEMbasis,FLAG_PARABOLIC=FEM_time$FLAG_PARABOLIC)
+  }
+  else
+    f = FEM_time
 
   res <- NULL
 
   if(class(FEM_time$FEMbasis$mesh)=='MESH.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+  }else if(class(FEM_time$FEMbasis$mesh)=='MESH.2.5D'){
+    ndim = 3
+    mydim = 2
+    res = CPP_eval.manifold.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+  }else if(class(FEM_time$FEMbasis$mesh)=='MESH.3D'){
+    ndim = 3
+    mydim = 3
+    res = CPP_eval.volume.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
   }
-  # }else if(class(FEM_time$FEMbasis$mesh)=='MESH.2.5D'){
-  #   ndim = 3
-  #   mydim = 2
-  #   res = CPP_eval.manifold.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, TRUE, ndim, mydim)
-  # }else if(class(FEM_time$FEMbasis$mesh)=='MESH.3D'){
-  #   ndim = 3
-  #   mydim = 3
-  #   res = CPP_eval.volume.FEM_time(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, TRUE, ndim, mydim)
-  # }
 
   return(as.matrix(res))
 }
