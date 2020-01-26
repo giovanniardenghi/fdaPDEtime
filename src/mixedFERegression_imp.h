@@ -51,7 +51,8 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	{
 		for(UInt j=0; j<B_.cols(); ++j)
 		{
-			B_.coeffRef(id, j) = 0;
+			if(B_.coeff(id, j)!=0)
+				B_.coeffRef(id, j) = 0;
 		}
 	}
 	//std::cout << _solution << std::endl;

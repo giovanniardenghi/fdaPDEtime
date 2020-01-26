@@ -224,16 +224,12 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
     if(min(BC$BC_indices)<0)
       stop("'BC_indices' elements must be non negative")
-    if(max(BC$BC_indices)>(N*length(time_mesh)))
+    if(max(BC$BC_indices)>(N*ifelse(is.null(time_mesh),length(time_locations),length(time_mesh))))
         stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
     if (FLAG_PARABOLIC==TRUE)
-      if((min(BC$BC_indices)<N)
+      if(min(BC$BC_indices)<N)
         stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
   }
-
-
-  if(max(BC$BC_indices) > nrow(FEMbasis$mesh$nodes)*length(time_mesh))
-      stop("At least one index in 'BC_indices' larger then the system dimension"
 
   if(!is.null(IC))
   {
