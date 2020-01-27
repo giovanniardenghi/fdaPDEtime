@@ -50,6 +50,8 @@ class  RegressionDataTime{
 
 		//bool inputType;
 		bool DOF_;
+		bool GCV_;
+		MatrixXr dof_matrix_;
 
 		#ifdef R_VERSION_
 		void setLocations(SEXP Rlocations);
@@ -57,6 +59,7 @@ class  RegressionDataTime{
 		void setObservations(SEXP Robservations);
 		void setCovariates(SEXP Rcovariates);
 		void setNrealizations(SEXP Rnrealizations);
+		void setDOF_matrix(SEXP RDOF_matrix);
 		void setIncidenceMatrix(SEXP RincidenceMatrix);
 		#endif
 
@@ -80,21 +83,22 @@ class  RegressionDataTime{
 			\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 					the other are automatically considered in Neumann Condition.
 			\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in Rbindex
+			\param GCV an R boolean indicating whether GCV has to be computed or not
 			\param DOF an R boolean indicating whether dofs of the model have to be computed or not
-	        \param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+	        \param RGCVmethod an R-integer indicating the method to use to compute the dofs when GCV is TRUE, can be either 1 (exact) or 2 (stochastic)
 	        \param Rnrealizations the number of random points used in the stochastic computation of the dofs
 		*/
 
 
 		#ifdef R_VERSION_
 		explicit RegressionDataTime(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP Rcovariates,
-								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP DOF, SEXP RGCVmethod,
-								SEXP Rnrealizations);
+								SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric, SEXP GCV, SEXP RGCVmethod,
+								SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix);
 		#endif
 
 		explicit RegressionDataTime(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 																std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, MatrixXr& covariates, MatrixXi& incidenceMatrix,
-																std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF);
+																std::vector<UInt>& bc_indices, std::vector<Real>& bc_values, VectorXr& ic, bool flag_mass, bool flag_parabolic, bool DOF, bool GCV);
 
 
 		void printObservations(std::ostream & out) const;
@@ -122,6 +126,7 @@ class  RegressionDataTime{
 		inline UInt const getNumberOfRegions() const {return nRegions_;}
 		inline bool isLocationsByNodes() const {return locations_by_nodes_;}
 		inline bool computeDOF() const {return DOF_;}
+		inline bool computeGCV() const {return GCV_;}
 		inline std::vector<UInt> const & getObservationsIndices() const {return observations_indices_;}
 		inline std::vector<UInt> const & getObservationsNA() const {return observations_na_;}
 		//! A method returning the the space penalization term
@@ -145,6 +150,7 @@ class  RegressionDataTime{
 		//! A method returning the number of vectors to use to stochastically estimate the edf
 		inline UInt const & getNrealizations() const {return nrealizations_;}
 		//! A method returning whether the PDE coefficients are space varying or not
+		inline MatrixXr const & getDOF_matrix() const {return dof_matrix_;}
 		bool const isSV() const {return isSpaceVarying;}
 };
 
@@ -172,20 +178,21 @@ class  RegressionDataTimeElliptic:public RegressionDataTime
 			\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 					the other are automatically considered in Neumann Condition.
 			\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in Rbindex
+			\param GCV an R boolean indicating whether GCV has to be computed or not
 			\param DOF an R boolean indicating whether dofs of the model have to be computed or not
-	        \param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+					\param RGCVmethod an R-integer indicating the method to use to compute the dofs when GCV is TRUE, can be either 1 (exact) or 2 (stochastic)
 	        \param Rnrealizations the number of random points used in the stochastic computation of the dofs
 		*/
 		#ifdef R_VERSION_
 		explicit RegressionDataTimeElliptic(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 				SEXP Rbeta, SEXP Rc, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-				SEXP DOF,SEXP RGCVmethod, SEXP Rnrealizations);
+				SEXP GCV,SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix);
 		#endif
 
 		explicit RegressionDataTimeElliptic(std::vector<Point>& locations, std::vector<Real>& time_locations, VectorXr& observations, UInt order,
 										std::vector<Real>& lambdaS, std::vector<Real>& lambdaT, Eigen::Matrix<Real,2,2>& K,	Eigen::Matrix<Real,2,1>& beta, Real c,
 										MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,	std::vector<Real>& bc_values, VectorXr& ic,
-										bool flag_mass, bool flag_parabolic, bool DOF);
+										bool flag_mass, bool flag_parabolic, bool DOF, bool GCV);
 
 		inline Eigen::Matrix<Real,2,2> const & getK() const {return K_;}
 		inline Eigen::Matrix<Real,2,1> const & getBeta() const {return beta_;}
@@ -218,15 +225,16 @@ class RegressionDataTimeEllipticSpaceVarying:public RegressionDataTime
 			\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 					the other are automatically considered in Neumann Condition.
 			\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in Rbindex
+			\param GCV an R boolean indicating whether GCV has to be computed or not
 			\param DOF an R boolean indicating whether dofs of the model have to be computed or not
-	        \param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+					\param RGCVmethod an R-integer indicating the method to use to compute the dofs when GCV is TRUE, can be either 1 (exact) or 2 (stochastic)
 	        \param Rnrealizations the number of random points used in the stochastic computation of the dofs
 
 		*/
 		#ifdef R_VERSION_
 		explicit RegressionDataTimeEllipticSpaceVarying(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, SEXP Rorder, SEXP RlambdaS, SEXP RlambdaT, SEXP RK,
 			  SEXP Rbeta, SEXP Rc, SEXP Ru, SEXP Rcovariates, SEXP RincidenceMatrix, SEXP RBCIndices, SEXP RBCValues, SEXP Rflag_mass, SEXP Rflag_parabolic, SEXP Ric,
-			  SEXP DOF, SEXP RGCVmethod, SEXP Rnrealizations);
+			  SEXP GCV, SEXP RGCVmethod, SEXP Rnrealizations, SEXP DOF, SEXP RDOF_matrix);
 		#endif
 
 
@@ -236,7 +244,7 @@ class RegressionDataTimeEllipticSpaceVarying:public RegressionDataTime
 													const std::vector<Eigen::Matrix<Real,2,1>, Eigen::aligned_allocator<Eigen::Matrix<Real,2,1> > >& beta,
 													const std::vector<Real>& c, const std::vector<Real>& u,
 													MatrixXr& covariates, MatrixXi& incidenceMatrix, std::vector<UInt>& bc_indices,	std::vector<Real>& bc_values, VectorXr& ic,
-													bool flag_mass, bool flag_parabolic, bool DOF);
+													bool flag_mass, bool flag_parabolic, bool DOF,bool GCV);
 
 		inline Diffusivity const & getK() const {return K_;}
 		inline Advection const & getBeta() const {return beta_;}

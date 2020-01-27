@@ -413,6 +413,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			computeDegreesOfFreedomStochastic(output_indexS, output_indexT, lambdaS, lambdaT);
 			break;
 	}
+}
+
+template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
+void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeGeneralizedCrossValidation(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT)
+{
 	VectorXr dataHat;
 	VectorXr z = regressionData_.getObservations();
 	if(regressionData_.getCovariates().rows()==0)
@@ -429,6 +434,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		_bestGCV = _GCV(output_indexS,output_indexT);
 	}
 }
+
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT)
@@ -867,9 +873,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		  _solution(s,t) = this->template system_solve(this->_rightHandSide);
 			// Mumps::template solve(matrixNoCov_,_rightHandSide,_solution(s,t));
 			//
-			if(regressionData_.computeDOF())
+			if(regressionData_.computeGCV())
 			{
-				computeDegreesOfFreedom(s,t,lambdaS,lambdaT);
+				if (regressionData_.computeDOF())
+					computeDegreesOfFreedom(s,t,lambdaS,lambdaT);
+				computeGeneralizedCrossValidation(s,t,lambdaS,lambdaT);
 			}
 			else
 			{

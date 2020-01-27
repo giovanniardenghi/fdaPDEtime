@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100)
+checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100, DOF=NULL, DOF_matrix=NULL)
 {
   #################### Parameter Check #########################
 
@@ -116,7 +116,7 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
   ans
 }
 
-checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, space_varying, ndim, mydim)
+checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying, ndim, mydim)
 {
   #################### Parameter Check #########################
   if(ncol(observations) != 1)
@@ -279,6 +279,16 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("Test on function 'u' in 'PDE_parameters' not passed; output is not numeric")
     if(length(try_u_func) != n_test_points)
       stop("Test on function 'u' in 'PDE_parameters' not passed; wrong size of the output")
+  }
+
+  if(!is.null(DOF_matrix))
+  {
+    if(GCV==FALSE)
+      warning("GCV=FALSE. DOF_matrix is passed but GCV is not computed")
+    if(nrow(DOF_matrix)!=length(lambdaS))
+      stop("The number of rows of DOF_matrix is different from the number of lambdaS")
+    if(ncol(DOF_matrix)!=length(lambdaT))
+      stop("The number of columns of DOF_matrix is different from the number of lambdaT")
   }
 
 }

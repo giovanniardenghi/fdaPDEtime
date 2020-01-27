@@ -1,4 +1,4 @@
-CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
+CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -9,6 +9,11 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   if(is.null(covariates))
   {
     covariates<-matrix(nrow = 0, ncol = 1)
+  }
+
+  if(is.null(DOF_matrix))
+  {
+    DOF_matrix<-matrix(nrow = 0, ncol = 1)
   }
 
   if(is.null(locations))
@@ -83,6 +88,8 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   storage.mode(FEMbasis$order) <- "integer"
   covariates <- as.matrix(covariates)
   storage.mode(covariates) <- "double"
+  DOF_matrix <- as.matrix(DOF_matrix)
+  storage.mode(DOF_matrix) <- "double"
   incidence_matrix <- as.matrix(incidence_matrix)
   storage.mode(incidence_matrix) <- "integer"
   storage.mode(ndim) <- "integer"
@@ -96,6 +103,8 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
 
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
+  DOF <- as.integer(DOF)
+  storage.mode(DOF) <-"integer"
 
   FLAG_MASS <- as.integer(FLAG_MASS)
   storage.mode(FLAG_MASS) <-"integer"
@@ -109,11 +118,11 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   ## Call C++ function
   bigsol <- .Call("regression_Laplace", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, PACKAGE = "fdaPDEtime")
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
   return(bigsol)
 }
 
-CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
+CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -125,6 +134,12 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   if(is.null(covariates))
   {
     covariates<-matrix(nrow = 0, ncol = 1)
+  }
+
+
+  if(is.null(DOF_matrix))
+  {
+    DOF_matrix<-matrix(nrow = 0, ncol = 1)
   }
 
   if(is.null(locations))
@@ -199,6 +214,8 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   storage.mode(FEMbasis$order) <- "integer"
   covariates <- as.matrix(covariates)
   storage.mode(covariates) <- "double"
+  DOF_matrix <- as.matrix(DOF_matrix)
+  storage.mode(DOF_matrix) <- "double"
   incidence_matrix <- as.matrix(incidence_matrix)
   storage.mode(incidence_matrix) <- "integer"
   storage.mode(ndim) <- "integer"
@@ -212,6 +229,8 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
 
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
+  DOF <- as.integer(DOF)
+  storage.mode(DOF) <-"integer"
 
   FLAG_MASS <- as.integer(FLAG_MASS)
   storage.mode(FLAG_MASS) <-"integer"
@@ -230,11 +249,11 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   bigsol <- .Call("regression_PDE", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
                   covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, PACKAGE = "fdaPDEtime")
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
   return(bigsol)
 }
 
-CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
+CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -246,6 +265,11 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
   if(is.null(covariates))
   {
     covariates<-matrix(nrow = 0, ncol = 1)
+  }
+
+  if(is.null(DOF_matrix))
+  {
+    DOF_matrix<-matrix(nrow = 0, ncol = 1)
   }
 
   if(is.null(locations))
@@ -327,6 +351,8 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
   storage.mode(FEMbasis$order) <- "integer"
   covariates <- as.matrix(covariates)
   storage.mode(covariates) <- "double"
+  DOF_matrix <- as.matrix(DOF_matrix)
+  storage.mode(DOF_matrix) <- "double"
   incidence_matrix <- as.matrix(incidence_matrix)
   storage.mode(incidence_matrix) <- "integer"
   storage.mode(ndim) <- "integer"
@@ -340,6 +366,8 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
 
   GCV <- as.integer(GCV)
   storage.mode(GCV) <-"integer"
+  DOF <- as.integer(DOF)
+  storage.mode(DOF) <-"integer"
 
   FLAG_MASS <- as.integer(FLAG_MASS)
   storage.mode(FLAG_MASS) <-"integer"
@@ -359,7 +387,7 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
   bigsol <- .Call("regression_PDE_space_varying", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                   covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, PACKAGE = "fdaPDEtime")
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
   return(bigsol)
 }
 
