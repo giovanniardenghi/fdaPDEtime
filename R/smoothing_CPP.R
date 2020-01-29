@@ -28,29 +28,15 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
 
   if(is.null(time_locations))
   {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_locations<-time_mesh
-    }
+    if(FLAG_PARABOLIC)
+      time_locations <- time_mesh[2:length(time_mesh)]
     else
-    {
-      NumTimeInstants = length(time_mesh)
-      time_locations<-time_mesh[1:NumTimeInstants-1]
-    }
+      time_locations <- time_mesh
   }
 
   if(is.null(time_mesh))
   {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_mesh<-time_locations
-    }
-    else
-    {
-      NumTimeInstants = length(time_locations)
-      lastTimeDiff = time_locations[NumTimeInstants]-time_locations[NumTimeInstants-1]
-      time_mesh<-c(time_locations,time_locations[NumTimeInstants]+lastTimeDiff)
-    }
+    time_mesh<-time_locations
   }
 
   if(is.null(BC$BC_indices))
@@ -144,29 +130,15 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
 
   if(is.null(time_locations))
   {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_locations<-time_mesh
-    }
+    if(FLAG_PARABOLIC)
+      time_locations <- time_mesh[2:length(time_mesh)]
     else
-    {
-      NumTimeInstants = length(time_mesh)
-      time_locations<-time_mesh[1:NumTimeInstants-1]
-    }
+      time_locations <- time_mesh
   }
 
   if(is.null(time_mesh))
   {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_mesh<-time_locations
-    }
-    else
-    {
-      NumTimeInstants = length(time_locations)
-      lastTimeDiff = time_locations[NumTimeInstants]-time_locations[NumTimeInstants-1]
-      time_mesh<-c(time_locations,time_locations[NumTimeInstants]+lastTimeDiff)
-    }
+    time_mesh<-time_locations
   }
 
   if(is.null(BC$BC_indices))
@@ -265,29 +237,18 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
 
   if(is.null(time_locations))
   {
-    if(!FLAG_PARABOLIC)
-    {
-      time_locations<-time_mesh
-    }
+    if(FLAG_PARABOLIC)
+      time_locations <- time_mesh[2:length(time_mesh)]
     else
-    {
-      NumTimeInstants = length(time_mesh)
-      time_locations<-time_mesh[1:NumTimeInstants-1]
-    }
+      time_locations <- time_mesh
   }
 
   if(is.null(time_mesh))
   {
-    if(!FLAG_PARABOLIC)
-    {
-      time_mesh<-time_locations
-    }
+    if(FLAG_PARABOLIC)
+      time_mesh <- rbind(0,time_locations)
     else
-    {
-      NumTimeInstants = length(time_locations)
-      lastTimeDiff = time_locations[NumTimeInstants]-time_locations[NumTimeInstants-1]
-      time_mesh<-c(time_locations,time_locations[NumTimeInstants]+lastTimeDiff)
-    }
+      time_mesh<-time_locations
   }
 
   if(is.null(BC$BC_indices))

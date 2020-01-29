@@ -24,19 +24,57 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	Real pen=10e20;
 
-	for( auto i=0; i<nbc_indices; i++)
-	 {
+	if(regressionData_.getFlagParabolic())
+	{
+		for( auto i=0; i<nbc_indices; i++)
+		 {
+				id1=bc_indices[i];
+				id3=id1+N*M;
+
+				matrixNoCov_.coeffRef(id1,id1)=pen;
+				matrixNoCov_.coeffRef(id3,id3)=pen;
+
+
+				_rightHandSide(id1)=bc_values[i]*pen;
+				_rightHandSide(id3)=0;
+		 }
+	}
+	else
+	{
+		Spline<IntegratorGaussP5,SPLINE_DEGREE,ORDER_DERIVATIVE>spline(mesh_time_);
+		MatrixXr phi(mesh_time_.size(),M);
+		for (UInt i = 0; i < mesh_time_.size(); ++i)
+		{
+			for (UInt j = 0; j < M; ++j)
+			{
+				phi(i,j) = spline.BasisFunction(SPLINE_DEGREE, j, mesh_time_[i]);
+			}
+		}
+		// Eigen::ColPivHouseholderQR<MatrixXr> Phisolver(phi);
+		Eigen::LDLT<MatrixXr> Phisolver(phi.transpose()*phi);
+		UInt ndt= nbc_indices/mesh_time_.size();
+		Rprintf("ndt=%d\n",ndt);
+		for( auto i=0; i<ndt; i++)
+		{
 			id1=bc_indices[i];
 			id3=id1+N*M;
+			VectorXr bcrhs(mesh_time_.size());
+			VectorXr bcsol(M);
+			for (UInt j=0;j<mesh_time_.size();j++)
+			{
+				bcrhs(j)=bc_values[i+j*ndt];
+			}
+			bcsol = Phisolver.solve(phi.transpose()*bcrhs);
+			for(UInt j=0;j<M;j++)
+			{
+				matrixNoCov_.coeffRef(id1+j*N,id1+j*N)=pen;
+				matrixNoCov_.coeffRef(id3+j*N,id3+j*N)=pen;
 
-			matrixNoCov_.coeffRef(id1,id1)=pen;
-			matrixNoCov_.coeffRef(id3,id3)=pen;
-
-
-			_rightHandSide(id1)=bc_values[i]*pen;
-			_rightHandSide(id3)=0;
-	 }
-
+				_rightHandSide(id1+j*N)=bcsol(j)*pen;
+				_rightHandSide(id3+j*N)=0;
+			}
+		}
+	}
 	matrixNoCov_.makeCompressed();
 }
 
@@ -50,7 +88,8 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	{
 		for(UInt j=0; j<B_.cols(); ++j)
 		{
-			B_.coeffRef(id, j) = 0;
+			if(B_.coeff(id,j)!=0)
+				B_.coeffRef(id, j) = 0;
 		}
 	}
 	//std::cout << _solution << std::endl;

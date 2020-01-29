@@ -19,9 +19,7 @@
 
 SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UInt** incidenceMatrix, UInt nRegions, UInt nElements, double* coef, UInt order, UInt fast, UInt mydim, UInt ndim)
 {
-
-
-    SEXP result;
+  SEXP result;
 
 	if (n_X>0) //pointwise data
 	{

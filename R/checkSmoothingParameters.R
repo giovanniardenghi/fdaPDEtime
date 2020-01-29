@@ -119,8 +119,8 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
 checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, space_varying, ndim, mydim)
 {
   #################### Parameter Check #########################
-  if(ncol(observations) != 1)
-    stop("'observations' must be a column vector")
+  if(ncol(observations) < 1)
+    stop("'observations' must contain at least one element")
   if(nrow(observations) < 1)
     stop("'observations' must contain at least one element")
   # if(is.null(locations))
@@ -138,16 +138,16 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   if(is.null(locations))
   {
     if(!is.null(time_locations))
-      if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*nrow(time_locations) != nrow(observations))
+      if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
         stop("'locations' and 'observations' have incompatible size;")
 
     if(is.null(time_locations))
     {
       if(FLAG_PARABOLIC)
-        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*(nrow(time_mesh)-1) != nrow(observations))
+        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || (nrow(time_mesh)-1) != ncol(observations))
           stop("'locations' and 'observations' have incompatible size;")
       if(!FLAG_PARABOLIC)
-        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)*nrow(time_mesh) != nrow(observations))
+        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || nrow(time_mesh) != ncol(observations))
           stop("'locations' and 'observations' have incompatible size;")
     }
   }
@@ -158,17 +158,31 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'locations' must be a ndim-columns matrix;")
 
     if(!is.null(time_locations))
-      if(nrow(locations)*nrow(time_locations) != nrow(observations))
-        stop("'locations' and 'observations' have incompatible size1;")
+    {
+      if(nrow(locations) != nrow(observations))
+        stop("'locations' and 'observations' have incompatible size;")
 
+      if(nrow(time_locations) != ncol(observations))
+        stop("'time_locations' and 'observations' have incompatible size;")
+    }
     if(is.null(time_locations))
     {
       if(FLAG_PARABOLIC)
-        if(nrow(locations)*(nrow(time_mesh)-1) != nrow(observations))
-          stop("'locations' and 'observations' have incompatible size2;")
+      {
+        if(nrow(locations) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+
+        if((nrow(time_mesh)-1) != ncol(observations))
+          stop("'time_mesh' and 'observations' have incompatible size;")
+      }
       if(!FLAG_PARABOLIC)
-        if(nrow(locations)*nrow(time_mesh) != nrow(observations))
-          stop("'locations' and 'observations' have incompatible size3;")
+      {
+        if(nrow(locations) != nrow(observations))
+          stop("'locations' and 'observations' have incompatible size;")
+
+        if(nrow(time_mesh) != ncol(observations))
+          stop("'time_mesh' and 'observations' have incompatible size;")
+      }
     }
     if(dim(locations)[1]==dim(FEMbasis$mesh$nodes)[1] & dim(locations)[2]==dim(FEMbasis$mesh$nodes)[2])
       warning("The locations matrix has the same dimensions as the mesh nodes. If the locations you are using are the
@@ -220,7 +234,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
     if(class(FEMbasis$mesh) == "MESH.2D"){
-      if(sum(BC$BC_indices>nrow(nrow(FEMbasis$mesh$nodes))) > 0)
+      if(any(BC$BC_indices>nrow(FEMbasis$mesh$nodes)*nrow(time_mesh)))
         stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
     }else if((class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D")){
       if(sum(BC$BC_indices>FEMbasis$mesh$nnodes) > 0)

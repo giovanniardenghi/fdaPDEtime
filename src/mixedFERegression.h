@@ -131,8 +131,9 @@ class SpaceTimeRegression
 	SpMat LR0k_;
 	//! kron(IM,R0)
 	SpMat R0k_;
-	//! kron(phi,psi) for separable case
-	// kron(IM,psi) 	for parabolic case
+	/*! kron(phi,psi) for separable case
+	 	kron(IM,psi) 	for parabolic case
+	*/
 	SpMat B_;
 	//! Kronecker product of the matrix W (1/domainArea) and identity
 	SpMat Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
@@ -141,12 +142,12 @@ class SpaceTimeRegression
 	MatrixXr V_;   //! W^T*psi, if pointwise data is U^T, needed for Woodbury decomposition
 	VectorXr z_; //! Observations
 
-	Eigen::SparseLU<SpMat> matrixNoCovdec_; // Stores the factorization of matrixNoCov_
-	Eigen::PartialPivLU<MatrixXr> Gdec_;	// Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
-	Eigen::PartialPivLU<MatrixXr> WTW_;	// Stores the factorization of W^T * W
-	bool isWTWfactorized_=false;
-	bool isRcomputed_=false;
-	Eigen::SparseLU<SpMat> R_; // Stores the factorization of R0k_
+	Eigen::SparseLU<SpMat> matrixNoCovdec_; //! Stores the factorization of matrixNoCov_
+	Eigen::PartialPivLU<MatrixXr> Gdec_;	//! Stores factorization of G =  C + [V * matrixNoCov^-1 * U]
+	Eigen::PartialPivLU<MatrixXr> WTW_;	//! Stores the factorization of W^T * W
+	bool isWTWfactorized_=false; //! true if the matrix W^T*W has been factorized, false otherwise
+	bool isRcomputed_=false; //! true if the matrix R0k has been factorized, false otherwise
+	Eigen::SparseLU<SpMat> R_; //! Stores the factorization of R0k_
 
 	// MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
 	// MatrixXr H_; //! The hat matrix of the regression
@@ -190,7 +191,7 @@ class SpaceTimeRegression
 	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
 	void computeDegreesOfFreedomStochastic(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
 
-	  //! A function to factorize the system, using Woodbury decomposition when there are covariates
+	//! A function to factorize the system, using Woodbury decomposition when there are covariates
 	void system_factorize();
 	//! A function which solves the factorized system
 	template<typename Derived>

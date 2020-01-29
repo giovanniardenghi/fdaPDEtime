@@ -139,7 +139,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
 
   checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, space_varying, mydim, ndim)
-
+  observations <- as.vector(observations)
   ################## End checking parameters, sizes and conversion #############################
 
   if(class(FEMbasis$mesh) == 'MESH.2D' & is.null(PDE_parameters)){
@@ -190,13 +190,20 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                         GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
   }
-  if (is.null(time_locations)) {
+  if(is.null(time_locations))
+  {
+    if(FLAG_PARABOLIC)
+      time_locations <- time_mesh[2:length(time_mesh)]
+    else
       time_locations <- time_mesh
-      if(FLAG_PARABOLIC)
-        time_locations <- time_locations[2:length(time_locations)]
   }
-  if (is.null(time_mesh)) {
-      time_mesh <- time_locations
+
+  if(is.null(time_mesh))
+  {
+    if(FLAG_PARABOLIC)
+      time_mesh <- rbind(0,time_locations)
+    else
+      time_mesh<-time_locations
   }
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
