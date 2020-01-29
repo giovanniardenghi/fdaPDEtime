@@ -190,6 +190,8 @@ class SpaceTimeRegression
 	void computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
 	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
 	void computeDegreesOfFreedomStochastic(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
+	//! A function computing GCV from the dofs
+	void computeGeneralizedCrossValidation(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
 
 	//! A function to factorize the system, using Woodbury decomposition when there are covariates
 	void system_factorize();
@@ -199,7 +201,7 @@ class SpaceTimeRegression
 
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
-		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData){};
+		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData),_dof(regressionData_.getDOF_matrix()){};
 	//! The function solving the system, used by the children classes. Saves the result in _solution
 	/*!
 	    \param oper an operator, which is the Stiffness operator in case of Laplacian regularization

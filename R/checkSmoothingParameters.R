@@ -1,4 +1,4 @@
-checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100)
+checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE,GCVmethod = 2,nrealizations = 100, DOF=NULL, DOF_matrix=NULL)
 {
   #################### Parameter Check #########################
 
@@ -116,7 +116,7 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
   ans
 }
 
-checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, space_varying, ndim, mydim)
+checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, DOF=FALSE, DOF_matrix=NULL, space_varying, ndim, mydim)
 {
   #################### Parameter Check #########################
   if(ncol(observations) < 1)
@@ -233,6 +233,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'BC_values' must be a column vector")
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
+<<<<<<< HEAD
     if(class(FEMbasis$mesh) == "MESH.2D"){
       if(any(BC$BC_indices>nrow(FEMbasis$mesh$nodes)*nrow(time_mesh)))
         stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
@@ -240,6 +241,18 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       if(sum(BC$BC_indices>FEMbasis$mesh$nnodes) > 0)
         stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
     }
+=======
+
+    N=ifelse(class(FEMbasis$mesh) == "MESH.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
+    #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
+    if(min(BC$BC_indices)<0)
+      stop("'BC_indices' elements must be non negative")
+    if(max(BC$BC_indices)>(N*ifelse(is.null(time_mesh),length(time_locations),length(time_mesh))))
+        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
+    if (FLAG_PARABOLIC==TRUE)
+      if(min(BC$BC_indices)<N)
+        stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
+>>>>>>> 4970b04387cd4d60683c90fdd950abb78800bba5
   }
 
   if(!is.null(IC))
@@ -290,6 +303,16 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("Test on function 'u' in 'PDE_parameters' not passed; output is not numeric")
     if(length(try_u_func) != n_test_points)
       stop("Test on function 'u' in 'PDE_parameters' not passed; wrong size of the output")
+  }
+
+  if(!is.null(DOF_matrix))
+  {
+    if(GCV==FALSE)
+      warning("GCV=FALSE. DOF_matrix is passed but GCV is not computed")
+    if(nrow(DOF_matrix)!=length(lambdaS))
+      stop("The number of rows of DOF_matrix is different from the number of lambdaS")
+    if(ncol(DOF_matrix)!=length(lambdaT))
+      stop("The number of columns of DOF_matrix is different from the number of lambdaT")
   }
 
 }
