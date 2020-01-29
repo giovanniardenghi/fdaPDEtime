@@ -1,10 +1,8 @@
-#fdaPDE_dev
+#fdaPDEtime_dev
 
-This repository contains the development version of fdaPDE package (future 2.0 version).
+This repository contains the development version of fdaPDEtime package.
 
-New features wrt CRAN: smooth regression for manifold and volumetric domains, also with areal data. Smooth fPCA over 2D, 2.5D and 3D domains, also with areal data.
-
-Bugs in fPCA, boundary conditions and space-varying regression have been fixed. Issues of point location in 2.5D have been fixed. Areal data are still undergoing tests.
+New features: smooth regression for manifold and volumetric domains, also with areal data.
 
 Compiled in both Win RStudio and Ubuntu 18.04 using g++ compiler. If using a Linux machine, it is advisable to install rgl, plot3D and plot3Drgl before fdaPDE.
 
