@@ -220,7 +220,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
-  if(is.null(IC))
+  if(is.null(IC) && FLAG_PARABOLIC)
     IC = bigsol[[6]]$coeff
   if(FLAG_PARABOLIC)
   {
