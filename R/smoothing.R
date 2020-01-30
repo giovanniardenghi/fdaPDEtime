@@ -149,6 +149,24 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
   if(FLAG_PARABOLIC)
     BC$BC_indices<-BC$BC_indices-nrow(FEMbasis$mesh$nodes)
+
+  if(is.null(time_locations))
+  {
+    if(FLAG_PARABOLIC && !is.null(IC))
+      time_locations <- time_mesh[2:length(time_mesh)]
+    else
+      time_locations <- time_mesh
+  }
+
+  if(is.null(time_mesh))
+  {
+    if(FLAG_PARABOLIC && !is.null(IC))
+      time_mesh <- rbind(2*time_locations[1]-time_locations[2],time_locations)
+    else
+      time_mesh<-time_locations
+  }
+
+
   ################## End checking parameters, sizes and conversion #############################
 
   if(class(FEMbasis$mesh) == 'MESH.2D' & is.null(PDE_parameters)){
@@ -199,30 +217,10 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
                                         GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
 
   }
-  if(is.null(time_locations))
-  {
-    if(FLAG_PARABOLIC)
-      time_locations <- time_mesh[2:length(time_mesh)]
-    else
-      time_locations <- time_mesh
-  }
 
-  if(is.null(time_mesh))
-  {
-    if(FLAG_PARABOLIC)
-      time_mesh <- rbind(0,time_locations)
-    else
-      time_mesh<-time_locations
-  }
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
-  if(length(time_mesh)==1)
-  {
-    M=1
-    f = array(data=bigsol[[1]][1:N,],dim=c(N,length(lambdaS)))
-    g = array(data=bigsol[[1]][(N+1):2*N,],dim=c(N,length(lambdaS)))
-  }
   if(FLAG_PARABOLIC)
   {
     f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
@@ -249,117 +247,113 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     beta = bigsol[[5]]
   else
     beta = NULL
-  # Make Functional objects object
-  if(length(time_mesh)==1)
-  {
-    fit.FEM_time  = FEM(f, FEMbasis)
-    PDEmisfit.FEM_time = FEM(g,FEMbasis)
-  }
+  if(!is.null(bigsol[[6]]))
+    ICestimated = bigsol[[6]]
   else
-  {
-    fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
-    PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
-  }
-  
+    ICestimated = NULL
+  # Make Functional objects object
+  fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
+  PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
+
   reslist = NULL
   # beta = getBetaCoefficients(locations, observations, fit.FEM_time, covariates, incidence_matrix, ndim, mydim)
   if(GCV == TRUE)
   {
     # seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM_time = fit.FEM_time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
     reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time,
-            beta = beta, edf = dof, GCV = GCV_, bestlambda = bestlambda)
+            beta = beta, edf = dof, GCV = GCV_, bestlambda = bestlambda, ICestimated=ICestimated)
   }else{
-    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta)
+    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta, ICestimated=ICestimated)
   }
 
   return(reslist)
 }
-
-getBetaCoefficients<-function(locations, time_locations, observations, fit.FEM, covariates, incidence_matrix = NULL, ndim, mydim)
-{
-  loc_nodes = NULL
-  fnhat = NULL
-  betahat = NULL
-
-  if(!is.null(covariates))
-  {
-    if(is.null(locations))
-    {
-      loc_nodes = (1:length(observations))[!is.na(observations)]
-      fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
-    }else{
-      loc_nodes = 1:length(observations)
-      fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
-    }
-    ## #row number of covariates, #col number of functions
-    betahat = matrix(0, nrow = ncol(covariates), ncol = ncol(fnhat))
-    for(i in 1:ncol(fnhat))
-      betahat[,i] = as.vector(lm.fit(covariates,as.vector(observations-fnhat[,i]))$coefficients)
-  }
-
-  return(betahat)
-}
-
-
-getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
-{
-  loc_nodes = NULL
-  fnhat = NULL
-
-  edf = as.matrix(edf)
-
-  # if(time_locations==NULL)
-  #   time_locations <- fit.FEM_time$mesh_time
-
-  if(is.null(locations) && is.null(incidence_matrix))
-  {
-    loc_nodes = (1:length(observations))#[!is.na(observations)]
-    #fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
-    locations=fit.FEM_time$FEMbasis$mesh$nodes[which(fit.FEM_time$FEMbasis$mesh$nodesmarkers==0),]
-    fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
-
-  }else
-  {
-    loc_nodes = 1:length(observations)
-    fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
-  }
-
-  zhat = NULL
-  zhat = matrix(nrow = length(loc_nodes), ncol = length(edf))
-  if(!is.null(covariates))
-  {
-    desmatprod = ( solve( t(covariates) %*% covariates ) ) %*% t(covariates)
-    for ( i in 1:length(edf))
-    {
-      betahat  = desmatprod %*% (observations-fnhat[,i])
-      zhat[,i] = covariates %*% betahat + fnhat[,i]
-    }
-  }else{
-    zhat = fnhat
-  }
-
-  np = length(loc_nodes)
-
-  stderr2 = numeric(length(edf))
-  GCV = numeric(length(edf))
-
-  zhat <- as.matrix(zhat)
-
-  if(any(np - edf <= 0))
-  {
-    warning("Some values of 'edf' are inconstistent. This might be due to ill-conditioning of the linear system. Try increasing value of 'lambda'.")
-  }
-
-  for (i in 1:length(edf))
-  {
-    stderr2[i] = t(observations[loc_nodes] - zhat[,i]) %*% (observations[loc_nodes] - zhat[,i]) / ( np - edf[i] )
-    GCV[i] = ( np / ( np - edf[i] )) * stderr2[i]
-  }
-
-  # NA if stderr2 is negative
-  stderr = vector('numeric', length(stderr2));
-  stderr[stderr2>=0] = sqrt(stderr2[stderr2>=0]);
-  stderr[stderr2<0] = NaN;
-
-  return(list(stderr = stderr, GCV = GCV))
-}
+#
+# getBetaCoefficients<-function(locations, time_locations, observations, fit.FEM, covariates, incidence_matrix = NULL, ndim, mydim)
+# {
+#   loc_nodes = NULL
+#   fnhat = NULL
+#   betahat = NULL
+#
+#   if(!is.null(covariates))
+#   {
+#     if(is.null(locations))
+#     {
+#       loc_nodes = (1:length(observations))[!is.na(observations)]
+#       fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
+#     }else{
+#       loc_nodes = 1:length(observations)
+#       fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#     }
+#     ## #row number of covariates, #col number of functions
+#     betahat = matrix(0, nrow = ncol(covariates), ncol = ncol(fnhat))
+#     for(i in 1:ncol(fnhat))
+#       betahat[,i] = as.vector(lm.fit(covariates,as.vector(observations-fnhat[,i]))$coefficients)
+#   }
+#
+#   return(betahat)
+# }
+#
+#
+# getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
+# {
+#   loc_nodes = NULL
+#   fnhat = NULL
+#
+#   edf = as.matrix(edf)
+#
+#   # if(time_locations==NULL)
+#   #   time_locations <- fit.FEM_time$mesh_time
+#
+#   if(is.null(locations) && is.null(incidence_matrix))
+#   {
+#     loc_nodes = (1:length(observations))#[!is.na(observations)]
+#     #fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
+#     locations=fit.FEM_time$FEMbasis$mesh$nodes[which(fit.FEM_time$FEMbasis$mesh$nodesmarkers==0),]
+#     fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#
+#   }else
+#   {
+#     loc_nodes = 1:length(observations)
+#     fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#   }
+#
+#   zhat = NULL
+#   zhat = matrix(nrow = length(loc_nodes), ncol = length(edf))
+#   if(!is.null(covariates))
+#   {
+#     desmatprod = ( solve( t(covariates) %*% covariates ) ) %*% t(covariates)
+#     for ( i in 1:length(edf))
+#     {
+#       betahat  = desmatprod %*% (observations-fnhat[,i])
+#       zhat[,i] = covariates %*% betahat + fnhat[,i]
+#     }
+#   }else{
+#     zhat = fnhat
+#   }
+#
+#   np = length(loc_nodes)
+#
+#   stderr2 = numeric(length(edf))
+#   GCV = numeric(length(edf))
+#
+#   zhat <- as.matrix(zhat)
+#
+#   if(any(np - edf <= 0))
+#   {
+#     warning("Some values of 'edf' are inconstistent. This might be due to ill-conditioning of the linear system. Try increasing value of 'lambda'.")
+#   }
+#
+#   for (i in 1:length(edf))
+#   {
+#     stderr2[i] = t(observations[loc_nodes] - zhat[,i]) %*% (observations[loc_nodes] - zhat[,i]) / ( np - edf[i] )
+#     GCV[i] = ( np / ( np - edf[i] )) * stderr2[i]
+#   }
+#
+#   # NA if stderr2 is negative
+#   stderr = vector('numeric', length(stderr2));
+#   stderr[stderr2>=0] = sqrt(stderr2[stderr2>=0]);
+#   stderr[stderr2<0] = NaN;
+#
+#   return(list(stderr = stderr, GCV = GCV))
+# }

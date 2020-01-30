@@ -66,9 +66,6 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
   if(!is.logical(FLAG_PARABOLIC))
     stop("'FLAG_PARABOLIC' is not logical")
 
-  if (FLAG_PARABOLIC==TRUE && is.null(IC))
-    stop("IC is required for parabolic smoothing")
-
   if(!is.null(PDE_parameters))
   {
     if (is.null(PDE_parameters$K))
@@ -171,9 +168,9 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       {
         if(nrow(locations) != nrow(observations))
           stop("'locations' and 'observations' have incompatible size;")
-
-        if((nrow(time_mesh)-1) != ncol(observations))
-          stop("'time_mesh' and 'observations' have incompatible size;")
+        if(!is.null(IC))
+          if((nrow(time_mesh)-1) != ncol(observations))
+            stop("'time_mesh' and 'observations' have incompatible size;")
       }
       if(!FLAG_PARABOLIC)
       {
@@ -238,13 +235,25 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
     if(min(BC$BC_indices)<0)
       stop("'BC_indices' elements must be non negative")
-    if(max(BC$BC_indices)>(N*ifelse(is.null(time_mesh),length(time_locations),length(time_mesh))))
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
+    # if(max(BC$BC_indices)>(N*ifelse(is.null(time_mesh),length(time_locations),length(time_mesh))))
+    #     stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
     if (FLAG_PARABOLIC==TRUE)
       if(min(BC$BC_indices)<N)
         stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
   }
 
+  if (FLAG_PARABOLIC==TRUE && is.null(IC))
+  {
+    if (!is.null(time_mesh))
+    {
+      if(ncol(observations)!=nrow(time_mesh))
+        stop("IC is required for parabolic smoothing")
+      else
+        message("IC is required for parabolic smoothing, will be estimated from the first column of 'observations'")
+    }
+    else
+      message("IC is required for parabolic smoothing, will be estimated from the first column of 'observations'")
+  }
   if(!is.null(IC))
   {
     if(ncol(IC) != 1)

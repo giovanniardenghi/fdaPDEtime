@@ -31,19 +31,6 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
     IC<-matrix(nrow = 0, ncol = 1)
   }
 
-  if(is.null(time_locations))
-  {
-    if(FLAG_PARABOLIC)
-      time_locations <- time_mesh[2:length(time_mesh)]
-    else
-      time_locations <- time_mesh
-  }
-
-  if(is.null(time_mesh))
-  {
-    time_mesh<-time_locations
-  }
-
   if(is.null(BC$BC_indices))
   {
     BC$BC_indices<-vector(length=0)
@@ -82,8 +69,6 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   storage.mode(mydim) <- "integer"
   storage.mode(lambdaS) <- "double"
   storage.mode(lambdaT) <- "double"
-  IC <- as.matrix(IC)
-  storage.mode(IC) <- "double"
   storage.mode(BC$BC_indices) <- "integer"
   storage.mode(BC$BC_values) <-"double"
 
@@ -100,12 +85,42 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
 
   storage.mode(nrealizations) <- "integer"
   storage.mode(GCVMETHOD) <- "integer"
-
+  IC <- as.matrix(IC)
+  storage.mode(IC) <- "double"
+  ICsol=NULL
+  if(nrow(IC)==0 && FLAG_PARABOLIC)
+  {
+    lambdaSIC <- 10^seq(-7,3,0.1)
+    ICsol <- .Call("regression_Laplace", locations, 0, observations[1:nrow(locations)], FEMbasis$mesh, 0, FEMbasis$order, mydim, ndim, lambdaSIC, 1, covariates[,1],
+                  incidence_matrix, BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], FLAG_MASS, FLAG_PARABOLIC,
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+    if((ICsol[[4]]+1)==1)
+    {
+      lambdaSIC <- 10^seq(-9,-7,0.1)
+      ICsol <- .Call("regression_Laplace", locations, 0, observations[1:nrow(locations)], FEMbasis$mesh, 0, FEMbasis$order, mydim, ndim, lambdaSIC, 1, covariates[,1],
+                    incidence_matrix, BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], FLAG_MASS, FLAG_PARABOLIC,
+                    IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+    }
+    else
+    {
+      if((ICsol[[4]]+1)==length(lambdaSIC))
+      {
+        lambdaSIC <- 10^seq(3,5,0.1)
+        ICsol <- .Call("regression_Laplace", locations, 0, observations[1:nrow(locations)], FEMbasis$mesh, 0, FEMbasis$order, mydim, ndim, lambdaSIC, 1, covariates[,1],
+                      incidence_matrix, BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))], FLAG_MASS, FLAG_PARABOLIC,
+                      IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+      }
+    }
+    IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),]
+    ICsol = list(IC.FEM=FEM(IC,FEMbasis),bestlambda=ICsol[[4]]+1)
+  }
+  IC <- as.matrix(IC)
+  storage.mode(IC) <- "double"
   ## Call C++ function
   bigsol <- .Call("regression_Laplace", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
                   IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
-  return(bigsol)
+  return(c(bigsol,ICsol))
 }
 
 CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
@@ -141,19 +156,6 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   if(is.null(IC))
   {
     IC<-matrix(nrow = 0, ncol = 1)
-  }
-
-  if(is.null(time_locations))
-  {
-    if(FLAG_PARABOLIC)
-      time_locations <- time_mesh[2:length(time_mesh)]
-    else
-      time_locations <- time_mesh
-  }
-
-  if(is.null(time_mesh))
-  {
-    time_mesh<-time_locations
   }
 
   if(is.null(BC$BC_indices))
@@ -257,22 +259,6 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
   if(is.null(IC))
   {
     IC<-matrix(nrow = 0, ncol = 1)
-  }
-
-  if(is.null(time_locations))
-  {
-    if(FLAG_PARABOLIC)
-      time_locations <- time_mesh[2:length(time_mesh)]
-    else
-      time_locations <- time_mesh
-  }
-
-  if(is.null(time_mesh))
-  {
-    if(FLAG_PARABOLIC)
-      time_mesh <- rbind(0,time_locations)
-    else
-      time_mesh<-time_locations
   }
 
   if(is.null(BC$BC_indices))
