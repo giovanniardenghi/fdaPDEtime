@@ -233,15 +233,6 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'BC_values' must be a column vector")
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
-<<<<<<< HEAD
-    if(class(FEMbasis$mesh) == "MESH.2D"){
-      if(any(BC$BC_indices>nrow(FEMbasis$mesh$nodes)*nrow(time_mesh)))
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
-    }else if((class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D")){
-      if(sum(BC$BC_indices>FEMbasis$mesh$nnodes) > 0)
-        stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh;")
-    }
-=======
 
     N=ifelse(class(FEMbasis$mesh) == "MESH.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
     #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
@@ -252,7 +243,6 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if (FLAG_PARABOLIC==TRUE)
       if(min(BC$BC_indices)<N)
         stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
->>>>>>> 4970b04387cd4d60683c90fdd950abb78800bba5
   }
 
   if(!is.null(IC))

@@ -108,6 +108,8 @@ class SpaceTimeRegression
 {
 	const MeshHandler<ORDER, mydim, ndim> &mesh_;
 	const std::vector<Real>& mesh_time_;
+	const UInt N_;
+	UInt M_;
   const InputHandler& regressionData_;
 	// Separable case:
 	//  system matrix= 	| B^T * Ak *B + lambdaT*Ptk |  -lambdaS*R1k^T  |   +  |B^T * Ak * (-H) * B |  O |   =  matrixNoCov + matrixOnlyCov
@@ -201,7 +203,13 @@ class SpaceTimeRegression
 
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
-		    mesh_(mesh), mesh_time_(mesh_time), regressionData_(regressionData),_dof(regressionData_.getDOF_matrix()){};
+		    mesh_(mesh), mesh_time_(mesh_time), N_(mesh_.num_nodes()), regressionData_(regressionData),_dof(regressionData_.getDOF_matrix())
+				{
+					if(mesh_time.size()==1)
+						M_=1;
+					else
+						M_ = regressionData.getFlagParabolic() ? mesh_time.size()-1 : mesh_time.size()+SPLINE_DEGREE-1;
+				};
 	//! The function solving the system, used by the children classes. Saves the result in _solution
 	/*!
 	    \param oper an operator, which is the Stiffness operator in case of Laplacian regularization

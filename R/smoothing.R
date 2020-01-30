@@ -107,7 +107,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   DOF=TRUE
   if(!is.null(DOF_matrix))
       DOF=FALSE
-  
+
   space_varying=checkSmoothingParameters(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix)
 
   ## Coverting to format for internal usage
@@ -144,13 +144,11 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   }
 
 
-<<<<<<< HEAD
-  checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, space_varying, mydim, ndim)
-  observations <- as.vector(observations)
-=======
   checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, DOF, DOF_matrix, space_varying, mydim, ndim)
+  observations<-as.vector(observations)
 
->>>>>>> 4970b04387cd4d60683c90fdd950abb78800bba5
+  if(FLAG_PARABOLIC)
+    BC$BC_indices<-BC$BC_indices-nrow(FEMbasis$mesh$nodes)
   ################## End checking parameters, sizes and conversion #############################
 
   if(class(FEMbasis$mesh) == 'MESH.2D' & is.null(PDE_parameters)){
@@ -219,6 +217,12 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
 
+  if(length(time_mesh)==1)
+  {
+    M=1
+    f = array(data=bigsol[[1]][1:N,],dim=c(N,length(lambdaS)))
+    g = array(data=bigsol[[1]][(N+1):2*N,],dim=c(N,length(lambdaS)))
+  }
   if(FLAG_PARABOLIC)
   {
     f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
@@ -246,9 +250,17 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   else
     beta = NULL
   # Make Functional objects object
-  fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
-  PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
-
+  if(length(time_mesh)==1)
+  {
+    fit.FEM_time  = FEM(f, FEMbasis)
+    PDEmisfit.FEM_time = FEM(g,FEMbasis)
+  }
+  else
+  {
+    fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
+    PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
+  }
+  
   reslist = NULL
   # beta = getBetaCoefficients(locations, observations, fit.FEM_time, covariates, incidence_matrix, ndim, mydim)
   if(GCV == TRUE)
