@@ -220,7 +220,8 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
   N = nrow(FEMbasis$mesh$nodes)
   M = ifelse(FLAG_PARABOLIC,length(time_mesh)-1,length(time_mesh) + 2);
-
+  if(is.null(IC))
+    IC = bigsol[[6]]$coeff
   if(FLAG_PARABOLIC)
   {
     f = array(dim=c(length(IC)+M*N,length(lambdaS),length(lambdaT)))
@@ -248,7 +249,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
   else
     beta = NULL
   if(!is.null(bigsol[[6]]))
-    ICestimated = bigsol[[6]]
+    ICestimated = list(IC.FEM=bigsol[[6]],bestlambda=bigsol[[7]])
   else
     ICestimated = NULL
   # Make Functional objects object
