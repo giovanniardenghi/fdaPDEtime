@@ -128,7 +128,7 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
       }
     }
     IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambda=lambdaSIC[sol[[4]][1]+1])
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1])
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -279,7 +279,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
       }
     }
     IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambda=lambdaSIC[sol[[4]][1]+1])
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1])
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -438,7 +438,7 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
       }
     }
     IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambda=lambdaSIC[sol[[4]][1]+1])
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1])
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
