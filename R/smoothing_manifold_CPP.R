@@ -1,4 +1,4 @@
-CPP_smooth.manifold.FEM.basis<-function(locations, time_locations, observations, FEMbasis,time_mesh, lambdaS, lambdaT,
+CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observations, FEMbasis,time_mesh, lambdaS, lambdaT,
                                     covariates, incidence_matrix, ndim, mydim, BC, FLAG_MASS, FLAG_PARABOLIC, IC,GCV, GCVMETHOD, nrealizations)
 {
 
@@ -124,9 +124,9 @@ CPP_smooth.manifold.FEM.basis<-function(locations, time_locations, observations,
   return(bigsol)
 }
 
-CPP_eval.manifold.FEM = function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+CPP_eval.manifold.FEM.time = function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
-  FEMbasis = FEM_time$FEMbasis
+  FEMbasis = FEM.time$FEMbasis
   # C++ function for manifold works with vectors not with matrices
 
   FEMbasis$mesh$triangles=c(t(FEMbasis$mesh$triangles))
@@ -146,8 +146,8 @@ CPP_eval.manifold.FEM = function(FEM_time, locations, time_locations, incidence_
   storage.mode(FEMbasis$mesh$nodes) <- "double"
   storage.mode(FEMbasis$mesh$triangles) <- "integer"
   storage.mode(FEMbasis$order) <- "integer"
-  storage.mode(FEM_time$mesh_time) <- "double"
-  coeff <- as.matrix(FEM_time$coeff)
+  storage.mode(FEM.time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM.time$coeff)
   storage.mode(coeff) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
@@ -158,7 +158,7 @@ CPP_eval.manifold.FEM = function(FEM_time, locations, time_locations, incidence_
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
-    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
                          FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
   }
 

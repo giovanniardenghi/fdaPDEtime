@@ -1,4 +1,4 @@
-CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.time.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -87,47 +87,58 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   storage.mode(GCVMETHOD) <- "integer"
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
+
+  ## IC estimation for parabolic smoothing from the first column of observations
   ICsol=NA
   if(nrow(IC)==0 && FLAG_PARABOLIC)
   {
     IC_time_locations=0
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
+
+    ##TODO: change the way of passing BC to IC estimation (waiting to know if BC are assumed constant over time or not)
     BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
     BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
     storage.mode(BC_indices_IC)<-"integer"
     storage.mode(BC_values_IC)<-"double"
+
+    ## set of lambdas for GCV in IC estimation
     lambdaSIC <- 10^seq(-7,3,0.1)
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
+    ## call the smoothing function with initial observations to estimates the IC
     ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
-                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1], as.matrix(covariates[,1]),
+                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
                   incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                  IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                  IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+
+    ## shifting the lambdas interval if the best lambda is the smaller one and retry smoothing
     if((ICsol[[4]][1]+1)==1)
     {
       lambdaSIC <- 10^seq(-9,-7,0.1)
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
       ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
-                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1], as.matrix(covariates[,1]),
+                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
                     incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                    IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                    IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
     {
+      ## shifting the lambdas interval if the best lambda is the higher one and retry smoothing
       if((ICsol[[4]][1]+1)==length(lambdaSIC))
       {
         lambdaSIC <- 10^seq(3,5,0.1)
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
         ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
-                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1], as.matrix(covariates[,1]),
+                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
                       incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                      IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                      IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
-    IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
+    IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
+    ## return a FEM object containing IC estimates with best lambda and best lambda index
     ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1])
   }
   IC <- as.matrix(IC)
@@ -139,7 +150,7 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.time.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -249,20 +260,21 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
     ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:nrow(locations)],
-                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                   PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
                   as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                  IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                  IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+
     if((ICsol[[4]][1]+1)==1)
     {
       lambdaSIC <- 10^seq(-9,-7,0.1)
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
       ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:nrow(locations)],
-                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                     PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
                     as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                    IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                    IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
     {
@@ -272,10 +284,10 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
         ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:nrow(locations)],
-                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                       PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
                       as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                      IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                      IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
     IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
@@ -291,7 +303,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.time.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -400,28 +412,32 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
     IC_time_locations=0
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
+
     BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
     BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
     storage.mode(BC_indices_IC)<-"integer"
     storage.mode(BC_values_IC)<-"double"
+
     lambdaSIC <- 10^seq(-7,3,0.1)
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
+    
     ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:nrow(locations)],
-                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                   PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                   as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                  IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                  IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+
     if((ICsol[[4]][1]+1)==1)
     {
       lambdaSIC <- 10^seq(-9,-7,0.1)
       lambdaSIC <- as.matrix(lambdaSIC)
       storage.mode(lambdaSIC) <- "double"
       ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:nrow(locations)],
-                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                     PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                     as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                    IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                    IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
     {
@@ -431,10 +447,10 @@ CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, F
         lambdaSIC <- as.matrix(lambdaSIC)
         storage.mode(lambdaSIC) <- "double"
         ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:nrow(locations)],
-                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, lambdaT[1],
+                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                       PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
                       as.matrix(covariates[,1]), incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
-                      IC, T, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+                      IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
     IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]
@@ -493,14 +509,14 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
     evalmat[,i] <- .Call("eval_FEM_fd", FEMbasis$mesh, locations, incidence_matrix, coeff[,i],
-                         FEMbasis$order, redundancy, mydim, ndim, package = "fdaPDE")
+                         FEMbasis$order, redundancy, mydim, ndim, package = "fdaPDEtime")
   }
 
   #Returning the evaluation matrix
   evalmat
 }
 
-CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+CPP_eval.FEM.time <- function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
 
   # EVAL_FEM_FD evaluates the FEM fd object at points (X,Y)
@@ -514,7 +530,7 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   # EVALMAT   an array of the same size as X and Y containing the value of
   #           FELSPLOBJ at (X,Y).
 
-  FEMbasis = FEM_time$FEMbasis
+  FEMbasis = FEM.time$FEMbasis
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -534,8 +550,8 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   storage.mode(FEMbasis$mesh$edges) <- "integer"
   storage.mode(FEMbasis$mesh$neighbors) <- "integer"
   storage.mode(FEMbasis$order) <- "integer"
-  storage.mode(FEM_time$mesh_time) <- "double"
-  coeff <- as.matrix(FEM_time$coeff)
+  storage.mode(FEM.time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM.time$coeff)
   storage.mode(coeff) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
@@ -546,7 +562,7 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
-    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
                          FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
   }
 
@@ -616,7 +632,7 @@ CPP_get.FEM.Mass.Matrix<-function(FEMbasis)
   ## Call C++ function
   triplets <- .Call("get_FEM_mass_matrix", FEMbasis$mesh,
                     FEMbasis$order,mydim, ndim,
-                    PACKAGE = "fdaPDE")
+                    PACKAGE = "fdaPDEtime")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
   return(A)
@@ -652,7 +668,7 @@ CPP_get.FEM.Stiff.Matrix<-function(FEMbasis)
   ## Call C++ function
   triplets <- .Call("get_FEM_stiff_matrix", FEMbasis$mesh,
                     FEMbasis$order, mydim, ndim,
-                    PACKAGE = "fdaPDE")
+                    PACKAGE = "fdaPDEtime")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
   return(A)
@@ -715,7 +731,7 @@ CPP_get.FEM.PDE.Matrix<-function(FEMbasis, PDE_parameters)
   triplets <- .Call("get_FEM_PDE_matrix", locations, observations, FEMbasis$mesh,
                     FEMbasis$order,mydim, ndim, lambda, PDE_parameters$K, PDE_parameters$b, PDE_parameters$c, covariates,
                     incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod, nrealizations,
-                    PACKAGE = "fdaPDE")
+                    PACKAGE = "fdaPDEtime")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
   return(A)
@@ -788,7 +804,7 @@ CPP_get.FEM.PDE.sv.Matrix<-function(FEMbasis, PDE_parameters)
   triplets <- .Call("get_FEM_PDE_space_varying_matrix", locations, observations, FEMbasis$mesh,
                     FEMbasis$order,mydim, ndim, lambda, PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u, covariates,
                     incidence_matrix, BC$BC_indices, BC$BC_values, GCV,GCVmethod, nrealizations,
-                    PACKAGE = "fdaPDE")
+                    PACKAGE = "fdaPDEtime")
 
   A = sparseMatrix(i = triplets[[1]][,1], j=triplets[[1]][,2], x = triplets[[2]], dims = c(nrow(FEMbasis$mesh$nodes),nrow(FEMbasis$mesh$nodes)))
   return(A)

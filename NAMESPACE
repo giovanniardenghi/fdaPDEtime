@@ -1,5 +1,5 @@
 useDynLib(fdaPDEtime)
-	
+
 	import(Matrix)
 	import(rgl)
 	import(geometry)
@@ -7,10 +7,13 @@ useDynLib(fdaPDEtime)
 	importFrom("graphics", "plot", "segments")
 	importFrom("stats", "lm.fit")
 	export(create.MESH.2D,refine.MESH.2D,create.MESH.2.5D,create.MESH.3D)
-	export(create.FEM.basis, smooth.FEM.basis, FEM, eval.FEM, FEM_time, eval.FEM_time)
-	export(plot.MESH.2D,plot.FEM, plot.MESH.2.5D, plot.MESH.3D, image.FEM, plot.FEM_time)
-	export(CPP_smooth.FEM.basis, CPP_smooth.FEM.PDE.basis, CPP_smooth.FEM.PDE.sv.basis, CPP_eval.FEM, CPP_eval.FEM_time, CPP_get_evaluations_points, CPP_get.FEM.Mass.Matrix, CPP_get.FEM.Stiff.Matrix, CPP_get.FEM.PDE.Matrix, CPP_get.FEM.PDE.sv.Matrix, CPP_smooth.manifold.FEM.basis, CPP_eval.manifold.FEM)
+	export(create.FEM.basis, smooth.FEM.time.basis, FEM, eval.FEM, FEM.time, eval.FEM.time)
+	export(plot.MESH.2D,plot.FEM, plot.MESH.2.5D, plot.MESH.3D, image.FEM, plot.FEM.time)
+	export(CPP_smooth.FEM.time.basis, CPP_smooth.FEM.time.PDE.basis, CPP_smooth.FEM.time.PDE.sv.basis,
+				 CPP_eval.FEM, CPP_eval.FEM.time, CPP_get_evaluations_points, CPP_get.FEM.Mass.Matrix,
+				 CPP_get.FEM.Stiff.Matrix, CPP_get.FEM.PDE.Matrix, CPP_get.FEM.PDE.sv.Matrix,
+				 CPP_smooth.manifold.FEM.time.basis, CPP_eval.manifold.FEM.time,
+				 CPP_smooth.volume.FEM.time.basis, CPP_eval.volume.FEM.time)
 	S3method(plot,FEM)
-	S3method(plot,FEM_time)
+	S3method(plot,FEM.time)
 	S3method(plot,MESH.2D)
-	

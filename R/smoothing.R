@@ -80,7 +80,7 @@
 #' print(ZincMeuseCovar$beta)
 
 
-smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL)
+smooth.FEM.time.basis<-function(locations = NULL, time_locations=NULL, observations, FEMbasis, time_mesh=NULL, lambdaS, lambdaT = 1, covariates = NULL, PDE_parameters=NULL, incidence_matrix = NULL, BC = NULL, FLAG_MASS = FALSE, FLAG_PARABOLIC = FALSE, IC = NULL, GCV = FALSE, GCVmethod = "Stochastic", nrealizations = 100, DOF_matrix=NULL)
 {
   if(class(FEMbasis$mesh) == "MESH.2D"){
     ndim = 2
@@ -173,7 +173,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
+    bigsol = CPP_smooth.FEM.time.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                   time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                   ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                   GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
@@ -182,7 +182,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.FEM.PDE.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
+    bigsol = CPP_smooth.FEM.time.PDE.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                       time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                       covariates=covariates, incidence_matrix=incidence_matrix,
                                       ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
@@ -192,7 +192,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.FEM.PDE.sv.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
+    bigsol = CPP_smooth.FEM.time.PDE.sv.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, PDE_parameters=PDE_parameters,
                                         covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
@@ -202,7 +202,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.manifold.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
+    bigsol = CPP_smooth.manifold.FEM.time.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                           time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                           ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                           GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
@@ -211,7 +211,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 
     bigsol = NULL
     print('C++ Code Execution')
-    bigsol = CPP_smooth.volume.FEM.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
+    bigsol = CPP_smooth.volume.FEM.time.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
                                         GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
@@ -248,25 +248,25 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
     beta = bigsol[[5]]
   else
     beta = NULL
-    
+
   if(all(is.na(bigsol[[6]])))
     ICestimated = NULL
   else
     ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]])
 
   # Make Functional objects object
-  fit.FEM_time  = FEM_time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
-  PDEmisfit.FEM_time = FEM_time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
+  fit.FEM.time  = FEM.time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)
+  PDEmisfit.FEM.time = FEM.time(g, time_mesh, FEMbasis, FLAG_PARABOLIC)
 
   reslist = NULL
-  # beta = getBetaCoefficients(locations, observations, fit.FEM_time, covariates, incidence_matrix, ndim, mydim)
+  # beta = getBetaCoefficients(locations, observations, fit.FEM.time, covariates, incidence_matrix, ndim, mydim)
   if(GCV == TRUE)
   {
-    # seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM_time = fit.FEM_time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
-    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time,
+    # seq=getGCV(locations = locations, time_locations=time_locations, observations = observations, fit.FEM.time = fit.FEM.time, covariates = covariates, incidence_matrix = incidence_matrix, edf = bigsol[[2]], ndim, mydim)
+    reslist=list(fit.FEM.time = fit.FEM.time, PDEmisfit.FEM.time = PDEmisfit.FEM.time,
             beta = beta, edf = dof, GCV = GCV_, bestlambda = bestlambda, ICestimated=ICestimated)
   }else{
-    reslist=list(fit.FEM_time = fit.FEM_time, PDEmisfit.FEM_time = PDEmisfit.FEM_time, beta = beta, ICestimated=ICestimated)
+    reslist=list(fit.FEM.time = fit.FEM.time, PDEmisfit.FEM.time = PDEmisfit.FEM.time, beta = beta, ICestimated=ICestimated)
   }
 
   return(reslist)
@@ -283,10 +283,10 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 #     if(is.null(locations))
 #     {
 #       loc_nodes = (1:length(observations))[!is.na(observations)]
-#       fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
+#       fnhat = as.matrix(fit.FEM.time$coeff[loc_nodes,])
 #     }else{
 #       loc_nodes = 1:length(observations)
-#       fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#       fnhat = eval.FEM.time(FEM.time = fit.FEM.time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
 #     }
 #     ## #row number of covariates, #col number of functions
 #     betahat = matrix(0, nrow = ncol(covariates), ncol = ncol(fnhat))
@@ -298,7 +298,7 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 # }
 #
 #
-# getGCV<-function(locations, time_locations, observations, fit.FEM_time, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
+# getGCV<-function(locations, time_locations, observations, fit.FEM.time, covariates = NULL, incidence_matrix = NULL, edf, ndim, mydim)
 # {
 #   loc_nodes = NULL
 #   fnhat = NULL
@@ -306,19 +306,19 @@ smooth.FEM.basis<-function(locations = NULL, time_locations=NULL, observations, 
 #   edf = as.matrix(edf)
 #
 #   # if(time_locations==NULL)
-#   #   time_locations <- fit.FEM_time$mesh_time
+#   #   time_locations <- fit.FEM.time$mesh_time
 #
 #   if(is.null(locations) && is.null(incidence_matrix))
 #   {
 #     loc_nodes = (1:length(observations))#[!is.na(observations)]
-#     #fnhat = as.matrix(fit.FEM_time$coeff[loc_nodes,])
-#     locations=fit.FEM_time$FEMbasis$mesh$nodes[which(fit.FEM_time$FEMbasis$mesh$nodesmarkers==0),]
-#     fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#     #fnhat = as.matrix(fit.FEM.time$coeff[loc_nodes,])
+#     locations=fit.FEM.time$FEMbasis$mesh$nodes[which(fit.FEM.time$FEMbasis$mesh$nodesmarkers==0),]
+#     fnhat = eval.FEM.time(FEM.time = fit.FEM.time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
 #
 #   }else
 #   {
 #     loc_nodes = 1:length(observations)
-#     fnhat = eval.FEM_time(FEM_time = fit.FEM_time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
+#     fnhat = eval.FEM.time(FEM.time = fit.FEM.time, locations = cbind(rep(time_locations,each=nrow(locations)),rep(locations[,1],length(time_locations)),rep(locations[,2],length(time_locations))), incidence_matrix = incidence_matrix)
 #   }
 #
 #   zhat = NULL

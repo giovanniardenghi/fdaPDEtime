@@ -94,7 +94,7 @@ FEM<-function(coeff,FEMbasis)
   return(fclass)
 }
 
-FEM_time<-function(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
+FEM.time<-function(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 {
   M = ifelse(FLAG_PARABOLIC,length(time_mesh),length(time_mesh)+2)
   if (is.null(coeff))
@@ -112,7 +112,7 @@ FEM_time<-function(coeff,time_mesh,FEMbasis,FLAG_PARABOLIC=FALSE)
 
   fclass = NULL
   fclass = list(coeff=coeff, mesh_time=time_mesh, FLAG_PARABOLIC=FLAG_PARABOLIC, FEMbasis=FEMbasis)
-  class(fclass)<-"FEM_time"
+  class(fclass)<-"FEM.time"
   return(fclass)
 }
 

@@ -1,7 +1,7 @@
-plot.FEM_time = function(x,t,lambdaS=1,lambdaT=1)
+plot.FEM.time = function(x,t,lambdaS=1,lambdaT=1)
 {
-  if(class(x) != 'FEM_time')
-    stop("x is not of class 'FEM_time'")
+  if(class(x) != 'FEM.time')
+    stop("x is not of class 'FEM.time'")
   if(is.null(t))
     stop("time required; is NULL")
   if(length(t)>1)
