@@ -307,6 +307,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim, ndim>::setA()
 			}
 		}
 	}
+	A_.makeCompressed();
 }
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
@@ -942,7 +943,7 @@ void MixedSplineRegression<InputHandler, Integrator, SPLINE_DEGREE, ORDER_DERIVA
 		Spline<Integrator, SPLINE_DEGREE, ORDER_DERIVATIVE> spline(mesh_time_);
 		UInt M = spline.num_knots()-SPLINE_DEGREE-1;
 		UInt m = regressionData_.getNumberofTimeObservations();
-		
+
 		phi_.resize(m, M);
 		Real value;
 

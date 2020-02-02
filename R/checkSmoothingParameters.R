@@ -148,7 +148,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'time_locations' must be of length bigger than 1. Only space time problems are allowed")
 
 
-  if(is.null(locations))
+  if(is.null(locations) && is.null(incidence_matrix))
   {
     if(!is.null(time_locations))
       if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
