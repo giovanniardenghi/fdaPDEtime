@@ -9,5 +9,5 @@ A dataset with information about the connectivity matrix and the nodes locations
 	\item nodes. A #nodes-by-3 matrix specifying the locations of each node.
 	\item triangles. A #triangles-by-3*order matrix specifying the indices of the nodes in each triangle.
    }
-This dataset is used to create a \code{MESH.2.5D} object with the function \code{create.MESH.2.5D}
+This dataset is used to create a \code{mesh.2.5D} object with the function \code{create.mesh.2.5D}
 }

@@ -7,11 +7,11 @@ checkSmoothingParameters<-function(locations = NULL, time_locations=NULL, observ
   if(class(FEMbasis)!= "FEMbasis")
     stop("'FEMbasis' is not class 'FEMbasis'")
 
-  if(class(FEMbasis$mesh)!='MESH.2D' & class(FEMbasis$mesh) != "MESH.2.5D" & class(FEMbasis$mesh) != "MESH.3D")
+  if(class(FEMbasis$mesh)!='mesh.2D' & class(FEMbasis$mesh) != "mesh.2.5D" & class(FEMbasis$mesh) != "mesh.3D")
     stop('Unknown mesh class')
 
-  if((class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D") & !is.null(PDE_parameters) )
-    stop('For mesh classes different from MESH.2D, anysotropic regularization is not yet implemented.
+  if((class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D") & !is.null(PDE_parameters) )
+    stop('For mesh classes different from mesh.2D, anysotropic regularization is not yet implemented.
          Use Laplacian regularization instead')
 
 
@@ -122,16 +122,32 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     stop("'observations' must contain at least one element")
   # if(is.null(locations))
   # {
-  #   if(class(FEMbasis$mesh) == "MESH.2D")
+  #   if(class(FEMbasis$mesh) == "mesh.2D")
   #   {
   #     if(nrow(observations) > nrow(FEMbasis$mesh$nodes))
   #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
-  #   }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(FEMbasis$mesh) == "MESH.3D")
+  #   }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(FEMbasis$mesh) == "mesh.3D")
   #   {
   #     if(nrow(observations) > FEMbasis$mesh$nnodes)
   #       stop("Size of 'observations' is larger then the size of 'nodes' in the mesh")
   #   }
   # }
+
+  if(!is.null(time_locations))
+    if(ncol(time_locations) != 1)
+      stop("'time_locations' must be a column vector")
+
+  if(!is.null(time_mesh))
+    if(ncol(time_mesh) != 1)
+      stop("'time_locations' must be a column vector")
+
+  if(!is.null(time_mesh) && length(time_mesh)==1)
+      stop("'time_mesh' must be of length bigger than 1. Only space time problems are allowed")
+
+  if(!is.null(time_locations) && length(time_locations)==1)
+      stop("'time_locations' must be of length bigger than 1. Only space time problems are allowed")
+
+
   if(is.null(locations))
   {
     if(!is.null(time_locations) && is.null(incidence_matrix))
@@ -141,10 +157,10 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if(is.null(time_locations) && is.null(incidence_matrix))
     {
       if(FLAG_PARABOLIC)
-        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || (nrow(time_mesh)-1) != ncol(observations))
+        if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || (nrow(time_mesh)-1) != ncol(observations))
           stop("'locations' and 'observations' have incompatible size;")
       if(!FLAG_PARABOLIC)
-        if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || nrow(time_mesh) != ncol(observations))
+        if(ifelse(class(FEMbasis$mesh) == "mesh.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || nrow(time_mesh) != ncol(observations))
           stop("'locations' and 'observations' have incompatible size;")
     }
   }
@@ -186,13 +202,6 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
               mesh nodes, set locations=NULL instead")
   }
 
-  if(!is.null(time_locations))
-    if(ncol(time_locations) != 1)
-      stop("'time_locations' must be a column vector")
-
-  if(!is.null(time_mesh))
-    if(ncol(time_mesh) != 1)
-      stop("'time_locations' must be a column vector")
 
   if(ncol(lambdaS) != 1)
     stop("'lambdaS' must be a column vector")
@@ -218,11 +227,11 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   {
     if (nrow(incidence_matrix) != nrow(observations))
       stop("'incidence_matrix' and 'observations' have incompatible size;")
-    if (class(FEMbasis$mesh) == 'MESH.2D' && ncol(incidence_matrix) != nrow(FEMbasis$mesh$triangles))
+    if (class(FEMbasis$mesh) == 'mesh.2D' && ncol(incidence_matrix) != nrow(FEMbasis$mesh$triangles))
       stop("'incidence_matrix' must be a ntriangles-columns matrix;")
-    else if (class(FEMbasis$mesh) == 'MESH.2.5D' && ncol(incidence_matrix) != FEMbasis$mesh$ntriangles)
+    else if (class(FEMbasis$mesh) == 'mesh.2.5D' && ncol(incidence_matrix) != FEMbasis$mesh$ntriangles)
       stop("'incidence_matrix' must be a ntriangles-columns matrix;")
-    else if (class(FEMbasis$mesh) == 'MESH.3D' && ncol(incidence_matrix) != FEMbasis$mesh$ntetrahedrons)
+    else if (class(FEMbasis$mesh) == 'mesh.3D' && ncol(incidence_matrix) != FEMbasis$mesh$ntetrahedrons)
       stop("'incidence_matrix' must be a ntetrahedrons-columns matrix;")
   }
 
@@ -235,7 +244,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
 
-    N=ifelse(class(FEMbasis$mesh) == "MESH.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
+    N=ifelse(class(FEMbasis$mesh) == "mesh.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
     #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
     if(min(BC$BC_indices)<0)
       stop("'BC_indices' elements must be non negative")

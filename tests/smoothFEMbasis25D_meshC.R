@@ -1,5 +1,5 @@
 #################################
-## smooth.FEM.basis meshC 2.5D ##
+## smooth.FEM.time meshC 2.5D ##
 #################################
 
 library(fdaPDE)
@@ -15,15 +15,15 @@ GCVMETHODFLAG="Exact" #for exact GCV
 
 set.seed(5847947)
 
-# build the mesh using create.MESH.2.5D
+# build the mesh using create.mesh.2.5D
 
 nome_mesh="C2_5D"
 
 vertici <- read.table(paste0("Data/2.5D/",nome_mesh,"_vertici.txt"), quote="\"", comment.char="")
 triangoli <- read.table(paste0("Data/2.5D/",nome_mesh,"_triangoli.txt"), quote="\"", comment.char="")
 
-mesh <- fdaPDE::create.MESH.2.5D(nodes = vertici[,1:3],triangles = triangoli[,1:3])
-#mesh=second.order.MESH.2.5D(mesh)
+mesh <- fdaPDE::create.mesh.2.5D(nodes = vertici[,1:3],triangles = triangoli[,1:3])
+#mesh=second.order.mesh.2.5D(mesh)
 FEMbasis <- fdaPDE::create.FEM.basis(mesh)
 
 plot(mesh)
@@ -42,10 +42,10 @@ for (i in 0:(nnodes-1)){
 data=func_evaluation+rnorm(nnodes,mean=0,sd=0.5)
 
 lambda=c(0.00375)
-# output_CPP =smooth.FEM.basis(observations = data,
+# output_CPP =smooth.FEM.time(observations = data,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP =smooth.FEM.basis(observations = data,
+output_CPP =smooth.FEM.time(observations = data,
                              FEMbasis = FEMbasis, lambda = lambda, GCV = GCVFLAG, 
                              GCVmethod = GCVMETHODFLAG)
 
@@ -62,7 +62,7 @@ plot(output_CPP$fit.FEM)
 #       edf 179.3775 
 #  
 
-points=eval.FEM(output_CPP$fit.FEM, locations=mesh$nodes) # il primo è un NA
+points=eval.FEM(output_CPP$fit.FEM, locations=mesh$nodes) # il primo ï¿½ un NA
 write.table(points, file="smoothFEMbasis25D_meshC_nod_nocov.txt")
 
 ### covariates, observations at node locations ###
@@ -70,9 +70,9 @@ nodesLocations=mesh$nodes
 cov1=3*nodesLocations[,1]+2*nodesLocations[,2]+5*nodesLocations[,3]+rnorm(nnodes,mean=0,sd=0.1)
 cov2=rnorm(nnodes, mean=3, sd=1)
 
-# output_CPP2=smooth.FEM.basis(observations = data, covariates = cbind(cov1,cov2), FEMbasis = FEMbasis, lambda =lambda)
+# output_CPP2=smooth.FEM.time(observations = data, covariates = cbind(cov1,cov2), FEMbasis = FEMbasis, lambda =lambda)
 
-output_CPP2=smooth.FEM.basis(observations = data, covariates = cbind(cov1,cov2), 
+output_CPP2=smooth.FEM.time(observations = data, covariates = cbind(cov1,cov2), 
                              FEMbasis = FEMbasis, lambda =lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
 plot(output_CPP2$fit.FEM)
@@ -89,5 +89,5 @@ plot(output_CPP2$fit.FEM)
 # [1,] -0.18535120
 # [2,]  0.03038352
 
-points2=eval.FEM(output_CPP2$fit.FEM, locations=nodesLocations) # il primo è un NA
+points2=eval.FEM(output_CPP2$fit.FEM, locations=nodesLocations) # il primo ï¿½ un NA
 write.table(points2, file="smoothFEMbasis25D_meshC_nod_cov.txt")

@@ -1,5 +1,5 @@
 ##############################
-## test smooth.FEM.basis 3D ##
+## test smooth.FEM.time 3D ##
 ##############################
 
 library(fdaPDE)
@@ -37,10 +37,10 @@ data=func_evaluation+rnorm(nnodes,mean=0,sd=0.5)
 FEMbasis <- create.FEM.basis(sphere3D)
 
 lambda=c(10^-2)
-# output_CPP =smooth.FEM.basis(observations = data,
+# output_CPP =smooth.FEM.time(observations = data,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP =smooth.FEM.basis(observations = data,
+output_CPP =smooth.FEM.time(observations = data,
                              FEMbasis = FEMbasis, lambda = lambda,
                              CPP_CODE = TRUE,GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP$fit.FEM)
@@ -53,7 +53,7 @@ plot(output_CPP$fit.FEM)
 #      stderr 0.8721914
 #      edf  176.1839
 
-nodesLocations=matrix(data=sphere3D$nodes, ncol=3, nrow=nnodes, byrow=T) #sarà giusto? o devo distribuire per colonne?
+nodesLocations=matrix(data=sphere3D$nodes, ncol=3, nrow=nnodes, byrow=T) #sarï¿½ giusto? o devo distribuire per colonne?
 
 points=eval.FEM(output_CPP$fit.FEM, locations=nodesLocations)
 
@@ -71,10 +71,10 @@ for (i in 0:(150-1)){
 
 data2=func_evaluation2+rnorm(150, mean=0, sd=0.5)
 
-# output_CPP2 =smooth.FEM.basis(observations = data2,locations=loc,
+# output_CPP2 =smooth.FEM.time(observations = data2,locations=loc,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP2 =smooth.FEM.basis(observations = data2,locations=loc,
+output_CPP2 =smooth.FEM.time(observations = data2,locations=loc,
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE,GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP2$fit.FEM)
@@ -95,10 +95,10 @@ write.table(points2, file="smoothFEMbasis3D_nonod_nocov_stochGCV.txt")
 cov1=3*nodesLocations[,1]+2*nodesLocations[,2]+5*nodesLocations[,3]+rnorm(nnodes,mean=0,sd=0.1)
 cov2=rnorm(nnodes, mean=3, sd=1)
 
-# output_CPP3 =smooth.FEM.basis(observations = data,covariates=cbind(cov1,cov2),
+# output_CPP3 =smooth.FEM.time(observations = data,covariates=cbind(cov1,cov2),
 #                               FEMbasis = FEMbasis, lambda = lambda,
 #                               CPP_CODE = TRUE)
-output_CPP3 =smooth.FEM.basis(observations = data,covariates=cbind(cov1,cov2),
+output_CPP3 =smooth.FEM.time(observations = data,covariates=cbind(cov1,cov2),
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 plot(output_CPP3$fit.FEM)
@@ -124,10 +124,10 @@ write.table(points3, file="smoothFEMbasis3D_nod_cov_stochGCV.txt")
 cov1=3*loc[,1]+2*loc[,2]+5*loc[,3]+rnorm(150,mean=0,sd=0.1)
 cov2=rnorm(150, mean=3, sd=1)
 
-# output_CPP4 =smooth.FEM.basis(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
+# output_CPP4 =smooth.FEM.time(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
 #                               FEMbasis = FEMbasis, lambda = lambda,
 #                               CPP_CODE = TRUE)
-output_CPP4 =smooth.FEM.basis(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
+output_CPP4 =smooth.FEM.time(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE,GCV = GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP4$fit.FEM)

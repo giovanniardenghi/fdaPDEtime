@@ -1,4 +1,3 @@
-
 #define R_VERSION_
 
 #include "fdaPDE.h"
@@ -9,23 +8,23 @@
 #include "matrix_assembler.h"
 #include "solverdefinitions.h"
 //#include <chrono>
-
 #include "mixedFERegression.h"
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_time)
 {
-	MeshHandler<ORDER, mydim, ndim> mesh(Rmesh);
+	MeshHandler<ORDER, mydim, ndim> mesh(Rmesh);//! load the mesh
 	UInt n_time = Rf_length(Rmesh_time);
 	std::vector<Real> mesh_time(n_time);
 	for(UInt i=0; i<n_time; ++i)
 	{
 		mesh_time[i] = REAL(Rmesh_time)[i];
 	}
-	SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim> regression(mesh, mesh_time,regressionData);
+	SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim> regression(mesh, mesh_time,regressionData);//! load data in a C++ object
 
-	regression.apply();
+	regression.apply(); //! solve the problem (compute the _solution, _dof, _GCV, _beta)
 
+	//! copy result in R memory
 	MatrixXv const & solution = regression.getSolution();
 	MatrixXr const & dof = regression.getDOF();
 	MatrixXr const & GCV = regression.getGCV();
@@ -41,7 +40,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 	else
 		 beta = regression.getBeta();
 
-	//Copy result in R memory
+	//!Copy result in R memory
 	SEXP result = NILSXP;
 	result = PROTECT(Rf_allocVector(VECSXP, 5));
 	SET_VECTOR_ELT(result, 0, Rf_allocMatrix(REALSXP, solution(0,0).size(), solution.rows()*solution.cols()));
@@ -50,6 +49,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 	SET_VECTOR_ELT(result, 3, Rf_allocVector(INTSXP, 2));
 	SET_VECTOR_ELT(result, 4, Rf_allocMatrix(REALSXP, beta(0,0).size(), beta.rows()*beta.cols()));
 
+	//! Copy solution
 	Real *rans = REAL(VECTOR_ELT(result, 0));
 	for(UInt i = 0; i < solution.rows(); i++)
 	{
@@ -60,6 +60,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 		}
 	}
 
+	//! Copy dof matrix
 	Real *rans2 = REAL(VECTOR_ELT(result, 1));
 	for(UInt i = 0; i < dof.rows(); i++)
 	{
@@ -69,6 +70,7 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 		}
 	}
 
+	//! Copy GCV matrix
 	Real *rans3 = REAL(VECTOR_ELT(result, 2));
 	for(UInt i = 0; i < GCV.rows(); i++)
 	{
@@ -78,10 +80,12 @@ SEXP regression_skeleton(InputHandler &regressionData, SEXP Rmesh, SEXP Rmesh_ti
 		}
 	}
 
+	//! Copy best lambdas
 	UInt *rans4 = INTEGER(VECTOR_ELT(result, 3));
 	rans4[0] = bestLambdaS;
 	rans4[1] = bestLambdaT;
 
+	//! Copy betas
 	Real *rans5 = REAL(VECTOR_ELT(result, 4));
 	for(UInt i = 0; i < beta.rows(); i++)
 	{
@@ -157,18 +161,28 @@ extern "C" {
 //! This function manages the various options for Spatial Regression, Sangalli et al version
 /*!
 	This function is then called from R code.
+	\param Rlocations an R-matrix containing the spatial locations of the observations
+	\param Rtime_locations an R-vector containing the temporal locations of the observations
 	\param Robservations an R-vector containing the values of the observations.
-	\param Rdesmat an R-matrix containing the design matrix for the regression.
-	\param Rmesh an R-object containg the output mesh from Trilibrary
-	\param Rorder an R-integer containing the order of the approximating basis.
-	\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param Rmesh an R-object containing the spatial mesh
+	\param Rmesh_time an R-vector containing the temporal mesh
+	\param Rorder an R-integer containing the order of the approximating basis in space.
+	\param Rmydim an R-integer specifying if the mesh nodes lie in R^2 or R^3
+	\param Rndim  an R-integer specifying if the "local dimension" is 2 or 3
+	\param RlambdaS an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param RlambdaT an R-double containing the penalization term of the empirical evidence respect to the prior one.
 	\param Rcovariates an R-matrix of covariates for the regression model
 	\param RincidenceMatrix an R-matrix containing the incidence matrix defining the regions for the smooth regression with areal data
 	\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 			the other are automatically considered in Neumann Condition.
 	\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in RBCIndices
-	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param Rflag_mass an R-integer that in case of separable problem specifies whether to use mass discretization or identity discretization
+	\param Rflag_parabolic an R-integer specifying if the problem is parabolic or separable
+	\param Ric an R-vector containing the initial condition needed in case of parabolic problem
+	\param GCV an R-integer indicating if the GCV has to be computed or not
 	\param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param RDOF_matrix a R-matrix containing the dofs (for every combination of the values in RlambdaS and RlambdaT) if they are already known from precedent computations
 	\param Rnrealizations the number of random points used in the stochastic computation of the dofs
 	\return R-vector containg the coefficients of the solution
 */
@@ -198,11 +212,16 @@ SEXP regression_Laplace(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservation
 
 /*!
 	This function is then called from R code.
+	\param Rlocations an R-matrix containing the spatial locations of the observations
+	\param Rtime_locations an R-vector containing the temporal locations of the observations
 	\param Robservations an R-vector containing the values of the observations.
-	\param Rdesmat an R-matrix containing the design matrix for the regression.
-	\param Rmesh an R-object containg the output mesh from Trilibrary
-	\param Rorder an R-integer containing the order of the approximating basis.
-	\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param Rmesh an R-object containing the spatial mesh
+	\param Rmesh_time an R-vector containing the temporal mesh
+	\param Rorder an R-integer containing the order of the approximating basis in space.
+	\param Rmydim an R-integer specifying if the mesh nodes lie in R^2 or R^3
+	\param Rndim  an R-integer specifying if the "local dimension" is 2 or 3
+	\param RlambdaS an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param RlambdaT an R-double containing the penalization term of the empirical evidence respect to the prior one.
 	\param RK an R-matrix representing the diffusivity matrix of the model
 	\param Rbeta an R-vector representing the advection term of the model
 	\param Rc an R-double representing the reaction term of the model
@@ -211,8 +230,13 @@ SEXP regression_Laplace(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservation
 	\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 			the other are automatically considered in Neumann Condition.
 	\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in RBCIndices
-	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param Rflag_mass an R-integer that in case of separable problem specifies whether to use mass discretization or identity discretization
+	\param Rflag_parabolic an R-integer specifying if the problem is parabolic or separable
+	\param Ric an R-vector containing the initial condition needed in case of parabolic problem
+	\param GCV an R-integer indicating if the GCV has to be computed or not
 	\param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param RDOF_matrix a R-matrix containing the dofs (for every combination of the values in RlambdaS and RlambdaT) if they are already known from precedent computations
 	\param Rnrealizations the number of random points used in the stochastic computation of the dofs
 	\return R-vector containg the coefficients of the solution
 */
@@ -237,13 +261,19 @@ SEXP regression_PDE(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, S
 	return(NILSXP);
 }
 
+
 /*!
 	This function is then called from R code.
+	\param Rlocations an R-matrix containing the spatial locations of the observations
+	\param Rtime_locations an R-vector containing the temporal locations of the observations
 	\param Robservations an R-vector containing the values of the observations.
-	\param Rdesmat an R-matrix containing the design matrix for the regression.
-	\param Rmesh an R-object containg the output mesh from Trilibrary
-	\param Rorder an R-integer containing the order of the approximating basis.
-	\param Rlambda an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param Rmesh an R-object containing the spatial mesh
+	\param Rmesh_time an R-vector containing the temporal mesh
+	\param Rorder an R-integer containing the order of the approximating basis in space.
+	\param Rmydim an R-integer specifying if the mesh nodes lie in R^2 or R^3
+	\param Rndim  an R-integer specifying if the "local dimension" is 2 or 3
+	\param RlambdaS an R-double containing the penalization term of the empirical evidence respect to the prior one.
+	\param RlambdaT an R-double containing the penalization term of the empirical evidence respect to the prior one.
 	\param RK an R object representing the diffusivity tensor of the model
 	\param Rbeta an R object representing the advection function of the model
 	\param Rc an R object representing the reaction function of the model
@@ -253,8 +283,13 @@ SEXP regression_PDE(SEXP Rlocations, SEXP Rtime_locations, SEXP Robservations, S
 	\param RBCIndices an R-integer containing the indexes of the nodes the user want to apply a Dirichlet Condition,
 			the other are automatically considered in Neumann Condition.
 	\param RBCValues an R-double containing the value to impose for the Dirichlet condition, on the indexes specified in RBCIndices
-	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param Rflag_mass an R-integer that in case of separable problem specifies whether to use mass discretization or identity discretization
+	\param Rflag_parabolic an R-integer specifying if the problem is parabolic or separable
+	\param Ric an R-vector containing the initial condition needed in case of parabolic problem
+	\param GCV an R-integer indicating if the GCV has to be computed or not
 	\param RGCVmethod an R-integer indicating the method to use to compute the dofs when DOF is TRUE, can be either 1 (exact) or 2 (stochastic)
+	\param DOF an R boolean indicating whether dofs of the model have to be computed or not
+	\param RDOF_matrix a R-matrix containing the dofs (for every combination of the values in RlambdaS and RlambdaT) if they are already known from precedent computations
 	\param Rnrealizations the number of random points used in the stochastic computation of the dofs
 	\return R-vector containg the coefficients of the solution
 */
@@ -302,7 +337,6 @@ SEXP get_integration_points(SEXP Rmesh, SEXP Rorder, SEXP Rmydim, SEXP Rndim)
 }
 
 //! A utility, not used for system solution, may be used for debugging
-
 SEXP get_FEM_mass_matrix(SEXP Rmesh, SEXP Rorder, SEXP Rmydim, SEXP Rndim)
 {
 	int order = INTEGER(Rorder)[0];

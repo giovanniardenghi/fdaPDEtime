@@ -64,7 +64,7 @@ PDE_parameters = list(K = K_func, b = b_func, c = c_func, u = u_func)
 # Estimate the underlying spatial field and plot these
 #FEM_CPP_PDE = smooth.FEM.PDE.sv.basis(observations = observations, 
 #                                     FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV = GCVFLAG, GCVmethod = GCVMETHODFLAG)
-FEM_CPP_PDE = smooth.FEM.basis(observations = observations, FEMbasis = FEMbasis, lambda = lambda, 
+FEM_CPP_PDE = smooth.FEM.time(observations = observations, FEMbasis = FEMbasis, lambda = lambda, 
                                PDE_parameters = PDE_parameters, GCV = GCVFLAG, GCVmethod = GCVMETHODFLAG)
 
 plot(FEM_CPP_PDE$fit.FEM)
@@ -89,7 +89,7 @@ observations2=sin(0.2*pi*xobs) +
   rnorm(n = length(xobs), sd = 0.1)
 # FEM_CPP_PDE2 = smooth.FEM.PDE.sv.basis(observations = observations2, locations=cbind(xobs,yobs),
 #                                        FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
-FEM_CPP_PDE2 = smooth.FEM.basis(observations = observations2, locations=cbind(xobs,yobs),
+FEM_CPP_PDE2 = smooth.FEM.time(observations = observations2, locations=cbind(xobs,yobs),
                                        FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 
 plot(FEM_CPP_PDE2$fit.FEM)
@@ -113,7 +113,7 @@ cov2=rnorm(mean=1,sd=0.1,n=length(mesh.2D.rectangular$nodes[,1]))
 
 # FEM_CPP_PDE3 = smooth.FEM.PDE.sv.basis(observations = observations, covariates=cbind(cov1,cov2),
 #                                        FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
-FEM_CPP_PDE3 = smooth.FEM.basis(observations = observations, covariates=cbind(cov1,cov2),
+FEM_CPP_PDE3 = smooth.FEM.time(observations = observations, covariates=cbind(cov1,cov2),
                                        FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
 plot(FEM_CPP_PDE3$fit.FEM)
@@ -140,7 +140,7 @@ cov2=rnorm(mean=1,sd=0.1,n=length(xobs))
 
 # FEM_CPP_PDE4 = smooth.FEM.PDE.sv.basis(observations = observations2, locations=cbind(xobs,yobs),
 #                                        covariates=cbind(cov1,cov2),FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
-FEM_CPP_PDE4 = smooth.FEM.basis(observations = observations2, locations=cbind(xobs,yobs),
+FEM_CPP_PDE4 = smooth.FEM.time(observations = observations2, locations=cbind(xobs,yobs),
                                        covariates=cbind(cov1,cov2),FEMbasis = FEMbasis, lambda = lambda, PDE_parameters = PDE_parameters, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
 plot(FEM_CPP_PDE4$fit.FEM)

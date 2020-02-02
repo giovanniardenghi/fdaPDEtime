@@ -4,5 +4,5 @@
 \alias{mesh.2D.simple}
 \title{Simple mesh}
 \description{
-A simple mesh. This is a MESH2D object created with \code{create.MESH.2D}.
+A simple mesh. This is a MESH2D object created with \code{create.mesh.2D}.
 }

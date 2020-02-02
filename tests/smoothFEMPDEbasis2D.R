@@ -41,7 +41,7 @@ PDE_parameters_anys = list(K = matrix(c(0.01,0,0,1), nrow = 2), b = c(0,0), c = 
 #                                   FEMbasis = FEMbasis, lambda = lambda, 
 #                                  PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
-FEM_CPP_PDE = smooth.FEM.basis(observations = observations, 
+FEM_CPP_PDE = smooth.FEM.time(observations = observations, 
                                    FEMbasis = FEMbasis, lambda = lambda, 
                                    PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 
@@ -64,10 +64,10 @@ xobs=runif(min=-0.5,max=0.5,n=80)
 yobs=runif(min=-0.5,max=0.5,n=80)
 points(xobs,yobs,col='blue')
 observations2 = sin(pi*xobs) + rnorm(n = length(xobs), sd = 0.1)
-#FEM_CPP_PDE2 = smooth.FEM.basis(locations=cbind(xobs,yobs),observations = observations2, 
+#FEM_CPP_PDE2 = smooth.FEM.time(locations=cbind(xobs,yobs),observations = observations2, 
 #                                    FEMbasis = FEMbasis, lambda = lambda, 
 #                                    PDE_parameters = PDE_parameters_anys,GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
-FEM_CPP_PDE2 = smooth.FEM.basis(locations=cbind(xobs,yobs),observations = observations2, 
+FEM_CPP_PDE2 = smooth.FEM.time(locations=cbind(xobs,yobs),observations = observations2, 
                                      FEMbasis = FEMbasis, lambda = lambda, 
                                      PDE_parameters = PDE_parameters_anys,GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
                                     
@@ -89,11 +89,11 @@ write.table(points2, file="smoothFEMPDEbasis2D_nonod_nocov.txt")
 
 cov1=sin(pi*mesh.2D.simple$nodes[,1])
 cov2=rnorm(mean=0, sd=0.5,n=length(mesh.2D.simple$nodes[,1]))
-FEM_CPP_PDE3 = smooth.FEM.basis(observations = observations, covariates=cbind(cov1,cov2),
+FEM_CPP_PDE3 = smooth.FEM.time(observations = observations, covariates=cbind(cov1,cov2),
                                     FEMbasis = FEMbasis, lambda = lambda, 
                                     PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 
-FEM_CPP_PDE3 = smooth.FEM.basis(observations = observations, covariates=cbind(cov1,cov2),
+FEM_CPP_PDE3 = smooth.FEM.time(observations = observations, covariates=cbind(cov1,cov2),
                                     FEMbasis = FEMbasis, lambda = lambda, 
                                     PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG)
 
@@ -118,11 +118,11 @@ FEM_CPP_PDE3$beta
 
 cov1=sin(pi*xobs)
 cov2=rnorm(mean=0, sd=0.5,n=length(xobs))
-FEM_CPP_PDE4 = smooth.FEM.basis(observations = observations2, locations=cbind(xobs,yobs), covariates=cbind(cov1,cov2),
+FEM_CPP_PDE4 = smooth.FEM.time(observations = observations2, locations=cbind(xobs,yobs), covariates=cbind(cov1,cov2),
                                     FEMbasis = FEMbasis, lambda = lambda, 
                                     PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 
-FEM_CPP_PDE4 = smooth.FEM.basis(observations = observations2, locations=cbind(xobs,yobs), covariates=cbind(cov1,cov2),
+FEM_CPP_PDE4 = smooth.FEM.time(observations = observations2, locations=cbind(xobs,yobs), covariates=cbind(cov1,cov2),
                                     FEMbasis = FEMbasis, lambda = lambda, 
                                     PDE_parameters = PDE_parameters_anys, GCV=GCVFLAG)
 

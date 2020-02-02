@@ -1,4 +1,4 @@
-CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observations, FEMbasis,time_mesh, lambdaS, lambdaT,
+CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, FEMbasis,time_mesh, lambdaS, lambdaT,
                                     covariates=NULL, incidence_matrix=NULL, ndim, mydim, BC=NULL, FLAG_MASS, FLAG_PARABOLIC, IC,GCV, GCVMETHOD=2, nrealizations=100,DOF=TRUE,DOF_matrix=NULL)
 {
 

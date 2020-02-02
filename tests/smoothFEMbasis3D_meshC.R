@@ -1,5 +1,5 @@
 ####################################
-## test smooth.FEM.basis 3D meshC ##
+## test smooth.FEM.time 3D meshC ##
 ####################################
 
 library(fdaPDE)
@@ -22,7 +22,7 @@ nome_mesh = "meshCcicciona"
 vertici <- read.table(paste0("Data/3D/",nome_mesh,"_vertici.txt"), quote="\"", comment.char="")
 tetraedri <- read.table(paste0("Data/3D/",nome_mesh,"_tetraedri.txt"), quote="\"", comment.char="")
 
-mesh <- fdaPDE::create.MESH.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
+mesh <- fdaPDE::create.mesh.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
 FEMbasis <- fdaPDE::create.FEM.basis(mesh)
 
 plot(mesh)
@@ -44,10 +44,10 @@ data=func_evaluation+rnorm(nnodes,mean=0,sd=0.5)
 FEMbasis <- create.FEM.basis(mesh)
 
 lambda=c(10^-2)
-# output_CPP =smooth.FEM.basis(observations = data,
+# output_CPP =smooth.FEM.time(observations = data,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP =smooth.FEM.basis(observations = data,
+output_CPP =smooth.FEM.time(observations = data,
                              FEMbasis = FEMbasis, lambda = lambda,
                              CPP_CODE = TRUE,GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP$fit.FEM)
@@ -60,7 +60,7 @@ plot(output_CPP$fit.FEM)
 #      stderr  1.693994
 #      edf  609.6247 
 
-nodesLocations=matrix(data=mesh$nodes, ncol=3, nrow=nnodes, byrow=T) #sarà giusto? o devo distribuire per colonne?
+nodesLocations=matrix(data=mesh$nodes, ncol=3, nrow=nnodes, byrow=T) #sarï¿½ giusto? o devo distribuire per colonne?
 
 points=eval.FEM(output_CPP$fit.FEM, locations=nodesLocations)
 
@@ -81,10 +81,10 @@ for (i in 0:(150-1)){
 
 data2=func_evaluation2+rnorm(150, mean=0, sd=0.5)
 
-# output_CPP2 =smooth.FEM.basis(observations = data2,locations=loc,
+# output_CPP2 =smooth.FEM.time(observations = data2,locations=loc,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP2 =smooth.FEM.basis(observations = data2,locations=loc,
+output_CPP2 =smooth.FEM.time(observations = data2,locations=loc,
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE,GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP2$fit.FEM)
@@ -105,10 +105,10 @@ write.table(points2, file="smoothFEMbasis3D_meshC_nonod_nocov.txt")
 cov1=3*nodesLocations[,1]+2*nodesLocations[,2]+5*nodesLocations[,3]+rnorm(nnodes,mean=0,sd=0.1)
 cov2=rnorm(nnodes, mean=3, sd=1)
 
-# output_CPP3 =smooth.FEM.basis(observations = data,covariates=cbind(cov1,cov2),
+# output_CPP3 =smooth.FEM.time(observations = data,covariates=cbind(cov1,cov2),
 #                               FEMbasis = FEMbasis, lambda = lambda,
 #                               CPP_CODE = TRUE)
-output_CPP3 =smooth.FEM.basis(observations = data,covariates=cbind(cov1,cov2),
+output_CPP3 =smooth.FEM.time(observations = data,covariates=cbind(cov1,cov2),
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 plot(output_CPP3$fit.FEM)
@@ -134,10 +134,10 @@ write.table(points3, file="smoothFEMbasis3D_meshC_nod_cov.txt")
 cov1=3*loc[,1]+2*loc[,2]+5*loc[,3]+rnorm(150,mean=0,sd=0.1)
 cov2=rnorm(150, mean=3, sd=1)
 
-# output_CPP4 =smooth.FEM.basis(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
+# output_CPP4 =smooth.FEM.time(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
 #                               FEMbasis = FEMbasis, lambda = lambda,
 #                               CPP_CODE = TRUE)
-output_CPP4 =smooth.FEM.basis(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
+output_CPP4 =smooth.FEM.time(observations = data2,locations=loc,covariates=cbind(cov1,cov2),
                               FEMbasis = FEMbasis, lambda = lambda,
                               CPP_CODE = TRUE,GCV = GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(output_CPP4$fit.FEM)

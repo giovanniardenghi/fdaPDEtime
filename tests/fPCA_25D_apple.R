@@ -8,7 +8,7 @@ data(apple)
 
 nodes=matrix(apple$nodes,ncol=3,byrow=T)
 triangles=matrix(apple$triangles,ncol=3,byrow=T)
-hub<-create.MESH.2.5D(nodes,triangles)
+hub<-create.mesh.2.5D(nodes,triangles)
 
 
 #cat('Plotting the mesh \n')

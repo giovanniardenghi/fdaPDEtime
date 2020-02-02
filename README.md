@@ -19,9 +19,9 @@ Remarks:
    vertici <- matrix(data=meshName$nodes,ncol=3,byrow=T)
    triangoli <- matrix(data=meshName$triangles, ncol=3, byrow=T) # tetrahedrons with 4 columns in 3D
 
-   mesh <- fdaPDE::create.MESH.2.5D(nodes = vertici,triangles = triangoli)
+   mesh <- fdaPDE::create.mesh.2.5D(nodes = vertici,triangles = triangoli)
    
 2) the test scripts in /tests are outdated, and will be updated as soon as possible. Scripts in /RScripts have not been verified yet.
 
-3) the shift of indexes from R to C++ is done within the R functions smooth.FEM.basis and smooth.FEM.FPCA. Do not use C++ scripts directly on the R mesh objects, unless you take care of shifing indexes by yourself.
+3) the shift of indexes from R to C++ is done within the R functions smooth.FEM.time and smooth.FEM.FPCA. Do not use C++ scripts directly on the R mesh objects, unless you take care of shifing indexes by yourself.
  
