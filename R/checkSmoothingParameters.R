@@ -213,6 +213,10 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   if(nrow(lambdaT) < 1)
     stop("'lambdaT' must contain at least one element")
 
+  if(nrow(lambdaS)+nrow(lambdaT)>2 && !GCV)
+    warning("different values of lambdaS or lambdaT have been passed but GCV=FALSE,
+              if you want to compute the GCV please set GCV=TRUE")
+
   if(!is.null(covariates))
   {
     if(nrow(covariates) != nrow(observations)*ncol(observations))

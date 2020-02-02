@@ -26,12 +26,10 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 		PROTECT(result = Rf_allocVector(REALSXP, n_X));
 		std::vector<bool> isinside(n_X);
 		//Set the mesh
-		//std::cout<<"Length "<<n_X<<"--X0 "<<X[0]<<"--Y0 "<<Y[0];
 		if(order==1 && mydim==2 && ndim==2)
 		{
 			MeshHandler<1,2,2> mesh(Rmesh);
 			Evaluator<1,2,2> evaluator(mesh);
-			//std::cout<<"Starting evaluation from FEMeval \n";
 			evaluator.eval(X, Y, n_X, coef, fast, REAL(result), isinside);
 		}
 		else if(order==2 && mydim==2 && ndim==2)
@@ -43,8 +41,6 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 		else if(order==1 && mydim==2 && ndim==3)
 		{
 			MeshHandler<1,2,3> mesh(Rmesh);
-			//mesh.printTriangles(std::cout);
-			//mesh.printPoints(std::cout);
 			Evaluator<1,2,3> evaluator(mesh);
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
@@ -57,8 +53,6 @@ SEXP CPP_eval_FEM_fd(SEXP Rmesh, double* X,  double* Y,  double* Z, UInt n_X, UI
 		else if(order==1 && mydim==3 && ndim==3)
 		{
 			MeshHandler<1,3,3> mesh(Rmesh);
-			//mesh.printTriangles(std::cout);
-			//mesh.printPoints(std::cout);
 			Evaluator<1,3,3> evaluator(mesh);
 			evaluator.eval(X, Y, Z, n_X, coef, fast, REAL(result), isinside);
 		}
@@ -280,6 +274,23 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
     return(result);
 }
 
+//! This function evaluates the solution on a set of given points by evaluating the tensorial basis expansion.
+/*!
+	This function is then called from R code.
+	Calls the walking algoritm for efficient point location inside the mesh in 2D.
+
+	\param Rmesh an R-object containg the output mesh from Trilibrary
+  \param Rmesh_time an R-vector containg the time mesh
+  \param Rlocations an R-matrix (seen as an array) containing the xyz coordinates of the points where the solution has to be evaluated
+  \param Rtime_locations an R-vector (seen as an array) containing the xyz coordinates of the points where the solution has to be evaluated
+	\param RincidenceMatrix an R-matrix for the incidence matrix defining the regions in the case of areal data
+	\param Rcoef an R-vector the coefficients of the solution
+	\param Rorder an R integer containg the order of the solution
+	\param Rfast an R integer 0 for Naive location algorithm, 1 for Walking Algorithm (can miss location for non convex meshes)
+  \param Rflag_parabolic an R logical (seen as an integer) 1 if parabolic smoothing, 0 otherwise
+  \param Rmydim an R integer containing the mesh space size, 2 for 2D and 2.5D, 3 for 3D
+  \param Rmydim an R integer containing the space size, 2 for 2D , 3 for 2.5D and 3D
+*/
 SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim)
 {
 	UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
@@ -316,7 +327,6 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		for (int i=0; i<n; i++)
 		{
 			X[i] = REAL(Rlocations)[i + n*0];
-			//Rprintf("X[%i]= %d", i, X[i]);
 			Y[i] = REAL(Rlocations)[i + n*1];
 			Z[i] = REAL(Rlocations)[i + n*2];
 		}
@@ -339,7 +349,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		}
 	}
 
-
+  // Compute the matrix of temporal basis evaluation in the given points
 	UInt DEGREE = flag_par ? 1 : 3;
 	UInt M = nt + DEGREE - 1;
 	SpMat phi(n,M);
@@ -386,29 +396,13 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	std::vector<Real> XX,YY,ZZ;
 	std::vector<UInt> indices;
 
+  //!evaluates the solution on the given points location at the first
+  //!node of the time mesh to initialize the array of results and retrieve the points out of mesh (NA)
 	for(UInt j=0; j<ns; ++j)
 	{
 		COEFF[j] = coef[j];
 	}
-	// for(UInt i=0; i<n; i++)
-	// {
-	// 	if(phi.coeff(i,0)!=0)
-	// 	{
-	// 		if (ndim==3)
-	// 		{
-	// 			XX.push_back(X[i]);
-	// 			YY.push_back(Y[i]);
-	// 			ZZ.push_back(Z[i]);
-	// 			indices.push_back(i);
-	// 		}
-	// 		else //ndim==2
-	// 		{
-	// 			XX.push_back(X[i]);
-	// 			YY.push_back(Y[i]);
-	// 			indices.push_back(i);
-	// 		}
-	// 	}
-	// }
+
 	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim);
 	for(UInt k=0; k < n; k++)
 	{
@@ -417,6 +411,8 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 			REAL(result)[k] = REAL(result)[k]*phi.coeff(k,0);
 	}
 
+  //! loop over time b-splines basis and evaluate the solution only on the points that have
+  //! the coefficient corresponding to that basis different from 0
 	for(UInt i=1; i<M; ++i)
 	{
 		for(UInt j=0; j<ns; ++j)
@@ -461,6 +457,17 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	return(result);
 }
 
+
+//! This function evaluates the solution on the mesh nodes at a given time with the purpose of plotting it.
+/*!
+	This function is then called from R code.
+
+  \param Rns an R integer containing the number of mesh nodes
+	\param Rmesh_time an R-vector containg the time mesh
+	\param Rtime an R double containing the time at which the solution has to be evaluated
+	\param Rcoef an R-vector the coefficients of the solution
+  \param Rflag_parabolic an R logical TRUE for parabolic smoothing, FALSE otherwise
+*/
 SEXP eval_FEM_time_nodes(SEXP Rns, SEXP Rmesh_time, SEXP Rtime, SEXP Rcoef, SEXP Rflag_parabolic)
 {
 	UInt ns = INTEGER(Rns)[0];

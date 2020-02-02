@@ -1,5 +1,5 @@
 useDynLib(fdaPDEtime)
-	
+
 	import(Matrix)
 	import(rgl)
 	import(geometry)
@@ -13,4 +13,3 @@ useDynLib(fdaPDEtime)
 	S3method(plot,FEM)
 	S3method(plot,FEM.time)
 	S3method(plot,mesh.2D)
-	
