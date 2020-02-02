@@ -304,7 +304,6 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
   UInt nt = Rf_length(Rmesh_time);
 	UInt nRegions = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[0];
 	UInt nElements = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[1]; //number of triangles/tetrahedron if areal data
-
 	//Declare pointer to access data from C++
 	Real *X, *Y, *Z, *mesh_time, *t;
 	UInt **incidenceMatrix;
@@ -356,12 +355,12 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	UInt DEGREE = flag_par ? 1 : 3;
 	UInt M = nt + DEGREE - 1;
 	SpMat phi(n,M);
-
+  UInt N = nRegions==0 ? n : nRegions;
 	if(flag_par)
 	{
 		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
 		Real value;
-		for (UInt i = 0; i < n; ++i)
+		for (UInt i = 0; i < N; ++i)
 		{
 			for (UInt j = 0; j < M; ++j)
 			{
@@ -377,7 +376,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	{
 		Spline<IntegratorGaussP5,3,2>spline(mesh_time,nt);
 		Real value;
-		for (UInt i = 0; i < n; ++i)
+		for (UInt i = 0; i < N; ++i)
 		{
 			for (UInt j = 0; j < M; ++j)
 			{
@@ -392,10 +391,8 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	phi.makeCompressed();
 
 	SEXP result;
-  if(nRegions==0)
-  	PROTECT(result=Rf_allocVector(REALSXP, n));
-  else
-    PROTECT(result=Rf_allocVector(REALSXP, nRegions));
+
+  PROTECT(result=Rf_allocVector(REALSXP, N));
 	Real* COEFF;
 	COEFF = (double*) malloc(sizeof(double)*ns);
 	std::vector<Real> XX,YY,ZZ;
@@ -409,7 +406,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	}
 
 	SEXP temp = CPP_eval_FEM_fd(Rmesh, X, Y, Z, n, incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim);
-	for(UInt k=0; k < n; k++)
+	for(UInt k=0; k < N; k++)
 	{
 		REAL(result)[k] = REAL(temp)[k];
 		if(!ISNA(REAL(result)[k]))
@@ -452,6 +449,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
     UInt count=0;
     UInt **INCIDENCE_MATRIX;
     INCIDENCE_MATRIX = (UInt**)malloc(sizeof(UInt*)*phi.col(i).nonZeros());
+
   	for (UInt k=0; k<nRegions; k++)
   	{
       if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
@@ -470,7 +468,16 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		{
 			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
 		}
-		XX.clear();YY.clear();ZZ.clear();indices.clear();//for (int l=0; l<phi.col(i).nonZeros(); l++){free(INCIDENCE_MATRIX[l]);}free(INCIDENCE_MATRIX);
+		XX.clear();YY.clear();ZZ.clear();indices.clear();
+
+    if(nRegions!=0)
+    {
+      for (int l=0; l<phi.col(i).nonZeros(); l++)
+      {
+        free(INCIDENCE_MATRIX[l]);
+      }
+    }
+    free(INCIDENCE_MATRIX);
 	}
 
 	free(X); free(Y); free(Z); free(COEFF);
