@@ -1,4 +1,4 @@
-CPP_smooth.volume.FEM.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
+CPP_smooth.volume.FEM.time<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100)
 {
 
   # C++ function for volumetric works with vectors not with matrices
@@ -120,9 +120,9 @@ CPP_smooth.volume.FEM.basis<-function(locations, time_locations, observations, F
   return(bigsol)
 }
 
-CPP_eval.volume.FEM = function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+CPP_eval.volume.FEM = function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
-  FEMbasis = FEM_time$FEMbasis
+  FEMbasis = FEM.time$FEMbasis
 
   # C++ function for volumetric works with vectors not with matrices
 
@@ -143,8 +143,8 @@ CPP_eval.volume.FEM = function(FEM_time, locations, time_locations, incidence_ma
   storage.mode(FEMbasis$mesh$nodes) <- "double"
   storage.mode(FEMbasis$mesh$tetrahedrons) <- "integer"
   storage.mode(FEMbasis$order) <- "integer"
-  storage.mode(FEM_time$mesh_time) <- "double"
-  coeff <- as.matrix(FEM_time$coeff)
+  storage.mode(FEM.time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM.time$coeff)
   storage.mode(coeff) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
@@ -155,7 +155,7 @@ CPP_eval.volume.FEM = function(FEM_time, locations, time_locations, incidence_ma
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
-    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
                          FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
   }
 

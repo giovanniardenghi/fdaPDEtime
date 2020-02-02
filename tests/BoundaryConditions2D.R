@@ -39,9 +39,9 @@ set.seed(5839745)
 
 Data = DatiEsatti + rnorm(length(DatiEsatti), sd = 0.05*(max(DatiEsatti)-min(DatiEsatti)))
 
-### smooth.FEM.basis ###
+### smooth.FEM.time ###
 
-Sol = smooth.FEM.basis(locations = SpacePoints,
+Sol = smooth.FEM.time(locations = SpacePoints,
                        observations = Data, 
                        FEMbasis = FEMbasis, 
                        lambda = lambda, 
@@ -56,7 +56,7 @@ write.table(points, file="NEWsmoothFEMbasis2D_BC_nonod_nocov.txt")
 
 PDE_parameters = list(K = matrix(10*c(K1,0,0,K2), nrow = 2), b = c(0,0), c = 0)
 
-Sol = smooth.FEM.basis(locations = SpacePoints,
+Sol = smooth.FEM.time(locations = SpacePoints,
                            observations = Data, 
                            FEMbasis = FEMbasis, 
                            lambda = lambda, PDE_parameters = PDE_parameters,
@@ -103,7 +103,7 @@ PDE_parameters = list(K = K_func, b = b_func, c = c_func, u = u_func)
 
 Data = DatiEsatti + rnorm(length(DatiEsatti), sd = 0.05*(max(DatiEsatti)-min(DatiEsatti)))
 
-Sol = smooth.FEM.basis(locations = SpacePoints,
+Sol = smooth.FEM.time(locations = SpacePoints,
                               observations = Data, 
                               FEMbasis = FEMbasis, 
                               lambda = lambda, 

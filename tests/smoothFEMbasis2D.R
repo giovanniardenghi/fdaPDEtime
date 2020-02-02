@@ -1,5 +1,5 @@
 ###########################
-## test smooth.FEM.basis ##
+## test smooth.FEM.time ##
 ###########################
 
 library(fdaPDE)
@@ -65,8 +65,8 @@ data = dati_esatti + rnorm(length(dati_esatti), sd = sd)
 lambda = 10^-2
 
 # solution
-FEM_CPP = smooth.FEM.basis(observations = data, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
-#FEM_CPP = smooth.FEM.basis(observations = data, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
+FEM_CPP = smooth.FEM.time(observations = data, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
+#FEM_CPP = smooth.FEM.time(observations = data, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
 
 plot(FEM_CPP$fit.FEM)
 
@@ -101,8 +101,8 @@ data2 = dati_esatti2 + rnorm(length(dati_esatti2), sd = sd2)
 
 lambda = 10^-2
 
-#FEM_CPP2 = smooth.FEM.basis(locations=oss,observations = data2, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
-FEM_CPP2 = smooth.FEM.basis(locations=oss,observations = data2, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
+#FEM_CPP2 = smooth.FEM.time(locations=oss,observations = data2, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
+FEM_CPP2 = smooth.FEM.time(locations=oss,observations = data2, FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG, GCVmethod = GCVMETHODFLAG)
 plot(FEM_CPP2$fit.FEM)
 
 points2=eval.FEM(FEM_CPP2$fit.FEM,locations=mesh$nodes)
@@ -121,8 +121,8 @@ write.table(points2,"smoothFEMbasis2D_nonod_nocov_exactGCV.txt")
 ### locations at nodes, with covariates
 
 cov=cbind(rnorm(dim(mesh$nodes)[1],mean=0.5,sd=0.01), rnorm(dim(mesh$nodes)[1], mean=2.5,sd=0.05))
-#FEM_CPP3= smooth.FEM.basis(observations = data, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
-FEM_CPP3= smooth.FEM.basis(observations = data, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
+#FEM_CPP3= smooth.FEM.time(observations = data, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
+FEM_CPP3= smooth.FEM.time(observations = data, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(FEM_CPP3$fit.FEM)
 FEM_CPP3$beta
 #[1,] -0.7866522  coincidono nei due gcv e senza
@@ -144,8 +144,8 @@ write.table(points3,"smoothFEMbasis2D_nod_cov_exactGCV.txt")
 ### locations different from nodes, with covariates
 
 cov=cbind(rnorm(dim(oss)[1],mean=0.5,sd=0.01), rnorm(dim(oss)[1], mean=2.5,sd=0.05))
-#FEM_CPP4 = smooth.FEM.basis(locations=oss,observations = data2, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
-FEM_CPP4 = smooth.FEM.basis(locations=oss,observations = data2, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
+#FEM_CPP4 = smooth.FEM.time(locations=oss,observations = data2, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG)
+FEM_CPP4 = smooth.FEM.time(locations=oss,observations = data2, covariates=cov,FEMbasis = FEMbasis, lambda = lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 plot(FEM_CPP4$fit.FEM)
 
 FEM_CPP4$beta

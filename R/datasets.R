@@ -40,14 +40,14 @@ NULL
 
 #' Simple mesh
 #'
-#' A simple mesh. This is a MESH2D object created with \code{create.MESH.2D}.
+#' A simple mesh. This is a MESH2D object created with \code{create.mesh.2D}.
 #'
 #' @name mesh.2D.simple
 NULL
 
 #' Simple Rectangular mesh
 #'
-#' A simple rectangular mesh. This is a MESH2D object created with \code{create.MESH.2D}.
+#' A simple rectangular mesh. This is a MESH2D object created with \code{create.mesh.2D}.
 #'
 #' @name mesh.2D.rectangular
 NULL
@@ -55,14 +55,14 @@ NULL
 
 #' Hub mesh
 #'
-#'A triangular mesh of a manifold representing a hub geometry.This is a \code{MESH.2.5D} object created with \code{create.MESH.2.5D}.
+#'A triangular mesh of a manifold representing a hub geometry.This is a \code{mesh.2.5D} object created with \code{create.mesh.2.5D}.
 #'
 #'@name hub
 NULL
 
 #' Candy mesh
 #'
-#'A triangular mesh of a manifold representing a candy geometry.This is a \code{MESH.2.5D} object created with \code{create.MESH.2.5D}.
+#'A triangular mesh of a manifold representing a candy geometry.This is a \code{mesh.2.5D} object created with \code{create.mesh.2.5D}.
 #'
 #'@name candy
 NULL
@@ -74,7 +74,7 @@ NULL
 #' 	\item nodes. A #nodes-by-3 matrix specifying the locations of each node.
 #' 	\item triangles. A #triangles-by-3*order matrix specifying the indices of the nodes in each triangle.
 #'	   }
-#' This dataset is used to create a \code{MESH.2.5D} object with the function \code{create.MESH.2.5D} 
+#' This dataset is used to create a \code{mesh.2.5D} object with the function \code{create.mesh.2.5D} 
 #'
 #'@name sphereData
 NULL
@@ -86,14 +86,14 @@ NULL
 #' 	\item nodes. A #nodes-by-3 matrix specifying the locations of each node.
 #' 	\item tetrahedrons. A #tetrahedrons-by-4 matrix specifying the indices of the nodes in each tetrahedron.
 #'	   }
-#' This dataset is used to create a \code{MESH.3D} object with the function \code{create.MESH.3D} 
+#' This dataset is used to create a \code{mesh.3D} object with the function \code{create.mesh.3D} 
 #'
 #'@name sphere3Ddata
 NULL
 
 #' Sphere3D
 #'
-#'A tetrahedral mesh of a volume representing a sphere geometry.This is a \code{MESH.3D} object created with \code{create.MESH.3D}.
+#'A tetrahedral mesh of a volume representing a sphere geometry.This is a \code{mesh.3D} object created with \code{create.mesh.3D}.
 #'
 #'@name sphere3D
 NULL

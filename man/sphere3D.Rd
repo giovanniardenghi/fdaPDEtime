@@ -4,5 +4,5 @@
 \alias{sphere3D}
 \title{Sphere3D}
 \description{
-A tetrahedral mesh of a volume representing a sphere geometry.This is a \code{MESH.3D} object created with \code{create.MESH.3D}.
+A tetrahedral mesh of a volume representing a sphere geometry.This is a \code{mesh.3D} object created with \code{create.mesh.3D}.
 }

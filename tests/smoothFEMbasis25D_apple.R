@@ -1,5 +1,5 @@
 ################################
-## test smooth.FEM.basis 2.5D ##
+## test smooth.FEM.time 2.5D ##
 ################################
 
 library(fdaPDE)
@@ -42,10 +42,10 @@ write(data,file="func_apple_25D.csv", sep=",",ncolumns=1)  # called z in matlab 
 FEMbasis <- create.FEM.basis(hub)
 
 lambda=c(0.00375)
-# output_CPP =smooth.FEM.basis(observations = data,
+# output_CPP =smooth.FEM.time(observations = data,
 #                              FEMbasis = FEMbasis, lambda = lambda,
 #                              CPP_CODE = TRUE)
-output_CPP =smooth.FEM.basis(observations = data,
+output_CPP =smooth.FEM.time(observations = data,
                              FEMbasis = FEMbasis, lambda = lambda,
                              CPP_CODE = TRUE, GCV = GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
@@ -64,9 +64,9 @@ plot(output_CPP$fit.FEM)
 
 points=eval.FEM(output_CPP$fit.FEM, locations=hub$nodes) # non va bene!
 
-nodesLocations=matrix(data=hub$nodes, ncol=3, nrow=nnodes, byrow=T) #sarà giusto? o devo distribuire per colonne?
+nodesLocations=matrix(data=hub$nodes, ncol=3, nrow=nnodes, byrow=T) #sarï¿½ giusto? o devo distribuire per colonne?
 
-points=eval.FEM(output_CPP$fit.FEM, locations=nodesLocations) # il primo è un NA
+points=eval.FEM(output_CPP$fit.FEM, locations=nodesLocations) # il primo ï¿½ un NA
 write.table(points, file="smoothFEMbasis25D_apple_nod_nocov_exactGCV.txt")
 
 ### covariates, observations at node locations ###
@@ -74,9 +74,9 @@ write.table(points, file="smoothFEMbasis25D_apple_nod_nocov_exactGCV.txt")
 cov1=3*nodesLocations[,1]+2*nodesLocations[,2]+5*nodesLocations[,3]+rnorm(nnodes,mean=0,sd=0.1)
 cov2=rnorm(nnodes, mean=3, sd=1)
 
-# output_CPP2=smooth.FEM.basis(observations = data, covariates = cbind(cov1,cov2), FEMbasis = FEMbasis, lambda =lambda)
+# output_CPP2=smooth.FEM.time(observations = data, covariates = cbind(cov1,cov2), FEMbasis = FEMbasis, lambda =lambda)
 
-output_CPP2=smooth.FEM.basis(observations = data, covariates = cbind(cov1,cov2), 
+output_CPP2=smooth.FEM.time(observations = data, covariates = cbind(cov1,cov2), 
                              FEMbasis = FEMbasis, lambda =lambda, GCV=GCVFLAG,GCVmethod = GCVMETHODFLAG)
 
 plot(output_CPP2$fit.FEM)
@@ -89,7 +89,7 @@ plot(output_CPP2$fit.FEM)
 #       stderr 0.5020056
 #       edf  11.35848 
 
-points2=eval.FEM(output_CPP2$fit.FEM, locations=nodesLocations) # il primo è un NA
+points2=eval.FEM(output_CPP2$fit.FEM, locations=nodesLocations) # il primo ï¿½ un NA
 write.table(points2, file="smoothFEMbasis25D_apple_nod_cov_exactGCV.txt")
 
 

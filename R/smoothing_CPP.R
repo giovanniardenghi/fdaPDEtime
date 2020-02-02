@@ -1,4 +1,4 @@
-CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV ,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
@@ -139,7 +139,7 @@ CPP_smooth.FEM.basis<-function(locations, time_locations, observations, FEMbasis
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -291,7 +291,7 @@ CPP_smooth.FEM.PDE.basis<-function(locations, time_locations, observations, FEMb
   return(c(bigsol,ICsol))
 }
 
-CPP_smooth.FEM.PDE.sv.basis<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
+CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, PDE_parameters, covariates = NULL, incidence_matrix = NULL, ndim, mydim, BC = NULL, FLAG_MASS, FLAG_PARABOLIC, IC, GCV,GCVMETHOD = 2, nrealizations = 100, DOF=TRUE,DOF_matrix=NULL)
 {
 
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
@@ -500,7 +500,7 @@ CPP_eval.FEM = function(FEM, locations, incidence_matrix, redundancy, ndim, mydi
   evalmat
 }
 
-CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
+CPP_eval.FEM.time <- function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)
 {
 
   # EVAL_FEM_FD evaluates the FEM fd object at points (X,Y)
@@ -514,7 +514,7 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   # EVALMAT   an array of the same size as X and Y containing the value of
   #           FELSPLOBJ at (X,Y).
 
-  FEMbasis = FEM_time$FEMbasis
+  FEMbasis = FEM.time$FEMbasis
   # Indexes in C++ starts from 0, in R from 1, opportune transformation
 
   FEMbasis$mesh$triangles = FEMbasis$mesh$triangles - 1
@@ -534,8 +534,8 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   storage.mode(FEMbasis$mesh$edges) <- "integer"
   storage.mode(FEMbasis$mesh$neighbors) <- "integer"
   storage.mode(FEMbasis$order) <- "integer"
-  storage.mode(FEM_time$mesh_time) <- "double"
-  coeff <- as.matrix(FEM_time$coeff)
+  storage.mode(FEM.time$mesh_time) <- "double"
+  coeff <- as.matrix(FEM.time$coeff)
   storage.mode(coeff) <- "double"
   storage.mode(ndim) <- "integer"
   storage.mode(mydim) <- "integer"
@@ -546,7 +546,7 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
   #Calling the C++ function "eval_FEM_fd" in RPDE_interface.cpp
   evalmat = matrix(0,max(nrow(locations),nrow(incidence_matrix)),ncol(coeff))
   for (i in 1:ncol(coeff)){
-    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM_time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
+    evalmat[,i] <- .Call("eval_FEM_time", FEMbasis$mesh, FEM.time$mesh_time, locations, time_locations, incidence_matrix, coeff[,i],
                          FEMbasis$order, redundancy, FLAG_PARABOLIC, mydim, ndim, package = "fdaPDEtime")
   }
 
@@ -557,13 +557,13 @@ CPP_eval.FEM_time <- function(FEM_time, locations, time_locations, incidence_mat
 
 CPP_get_evaluations_points = function(mesh, order)
 {
-  #here we do not shift indices since this function is called inside CPP_smooth.FEM.PDE.sv.basis
+  #here we do not shift indices since this function is called inside CPP_smooth.FEM.PDE.sv.time
 
   # Imposing types, this is necessary for correct reading from C++
-  if(class(mesh)=="MESH.2D"){
+  if(class(mesh)=="mesh.2D"){
     ndim=2
     mydim=2
-  }else if(class(mesh) == "MESH.2.5D" || class(mesh) == "MESH.3D"){
+  }else if(class(mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
     stop('Function not yet implemented for this mesh class')
   }else{
     stop('Unknown mesh class')
@@ -587,10 +587,10 @@ CPP_get_evaluations_points = function(mesh, order)
 
 CPP_get.FEM.Mass.Matrix<-function(FEMbasis)
 {
-  if(class(FEMbasis$mesh) == "MESH.2D"){
+  if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
     mydim = 2
-  }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(mesh) == "MESH.3D"){
+  }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
     stop('Function not yet implemented for this mesh class')
   }else{
     stop('Unknown mesh class')
@@ -624,10 +624,10 @@ CPP_get.FEM.Mass.Matrix<-function(FEMbasis)
 
 CPP_get.FEM.Stiff.Matrix<-function(FEMbasis)
 {
-  if(class(FEMbasis$mesh) == "MESH.2D"){
+  if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
     mydim = 2
-  }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(mesh) == "MESH.3D"){
+  }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
     stop('Function not yet implemented for this mesh class')
   }else{
     stop('Unknown mesh class')
@@ -660,10 +660,10 @@ CPP_get.FEM.Stiff.Matrix<-function(FEMbasis)
 
 CPP_get.FEM.PDE.Matrix<-function(FEMbasis, PDE_parameters)
 {
-  if(class(FEMbasis$mesh) == "MESH.2D"){
+  if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
     mydim = 2
-  }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(mesh) == "MESH.3D"){
+  }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
     stop('Function not yet implemented for this mesh class')
   }else{
     stop('Unknown mesh class')
@@ -725,10 +725,10 @@ CPP_get.FEM.PDE.Matrix<-function(FEMbasis, PDE_parameters)
 CPP_get.FEM.PDE.sv.Matrix<-function(FEMbasis, PDE_parameters)
 {
 
-  if(class(FEMbasis$mesh) == "MESH.2D"){
+  if(class(FEMbasis$mesh) == "mesh.2D"){
     ndim = 2
     mydim = 2
-  }else if(class(FEMbasis$mesh) == "MESH.2.5D" || class(mesh) == "MESH.3D"){
+  }else if(class(FEMbasis$mesh) == "mesh.2.5D" || class(mesh) == "mesh.3D"){
     stop('Function not yet implemented for this mesh class')
   }else{
     stop('Unknown mesh class')

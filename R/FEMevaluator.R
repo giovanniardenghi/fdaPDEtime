@@ -35,16 +35,16 @@ eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
 
   res <- NULL
 
-  if(class(FEM$FEMbasis$mesh)=='MESH.2D'){
+  if(class(FEM$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
     res = CPP_eval.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
 
-  }else if(class(FEM$FEMbasis$mesh)=='MESH.2.5D'){
+  }else if(class(FEM$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
     res = CPP_eval.manifold.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
-  }else if(class(FEM$FEMbasis$mesh)=='MESH.3D'){
+  }else if(class(FEM$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
     res = CPP_eval.volume.FEM(FEM, locations, incidence_matrix, TRUE, ndim, mydim)
@@ -53,25 +53,25 @@ eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
   return(as.matrix(res))
 }
 
-#' Evaluate a FEM_time object at a set of point locations
+#' Evaluate a FEM.time object at a set of point locations
 #'
-#' @param FEM_time A \code{FEM_time} object to be evaluated.
-#' @param locations A 3-columns(in case of planar mesh) or 4-columns(in case of 2D manifold in a 3D space or a 3D volume) matrix with the time and spatial locations where the FEM_time object should be evaluated.
+#' @param FEM.time A \code{FEM.time} object to be evaluated.
+#' @param locations A 3-columns(in case of planar mesh) or 4-columns(in case of 2D manifold in a 3D space or a 3D volume) matrix with the time and spatial locations where the FEM.time object should be evaluated.
 #' @param incidence_matrix In case of areal data, the #regions x #elements incidence matrix defining the regions
 #' @return
-#' A matrix of numeric evaluations of the \code{FEM_time} object. Each row indicates the location where the evaluation has been taken, the column indicates the
+#' A matrix of numeric evaluations of the \code{FEM.time} object. Each row indicates the location where the evaluation has been taken, the column indicates the
 #' function evaluated.
-#' @description It evaluates a FEM_time object the specified set of locations or regions. Locations and incidence_matrix parameters cannot be both null or both provided.
-#' @usage eval.FEM_time(FEM_time, locations, incidence_matrix=NULL)
+#' @description It evaluates a FEM.time object the specified set of locations or regions. Locations and incidence_matrix parameters cannot be both null or both provided.
+#' @usage eval.FEM.time(FEM.time, locations, incidence_matrix=NULL)
 #' @references
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 
-eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1)
+eval.FEM.time <- function(FEM.time, locations, incidence_matrix = NULL,lambdaS=1,lambdaT=1)
 {
-  if (is.null(FEM_time))
-    stop("FEM_time required;  is NULL.")
-  if(class(FEM_time) != "FEM_time")
-    stop("'FEM_time' is not of class 'FEM_time'")
+  if (is.null(FEM.time))
+    stop("FEM.time required;  is NULL.")
+  if(class(FEM.time) != "FEM.time")
+    stop("'FEM.time' is not of class 'FEM.time'")
   if (is.null(locations) && is.null(incidence_matrix))
     stop("'locations' OR 'incidence_matrix' required;  both are NULL.")
   if (!is.null(locations) && !is.null(incidence_matrix))
@@ -89,9 +89,9 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambdaS=1
     {
       if(dim(locations)[2]<3)
         stop("'locations' requires at least t,X,Y")
-      if(dim(locations)[1]==dim(FEM_time$FEMbasis$mesh$nodes)[1] & (dim(locations)[2]-1)==dim(FEM_time$FEMbasis$mesh$nodes)[2])
-        warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM_time object evaluation
-              at the mesh nodes, use FEM_time$coeff instead")
+      if(dim(locations)[1]==dim(FEM.time$FEMbasis$mesh$nodes)[1] & (dim(locations)[2]-1)==dim(FEM.time$FEMbasis$mesh$nodes)[2])
+        warning("The locations matrix has the same dimensions as the mesh nodes. If you want to get the FEM.time object evaluation
+              at the mesh nodes, use FEM.time$coeff instead")
       locations <- locations[,2:dim(locations)[2]]
       incidence_matrix <- matrix(nrow = 0, ncol = 1)
     }
@@ -100,31 +100,31 @@ eval.FEM_time <- function(FEM_time, locations, incidence_matrix = NULL,lambdaS=1
       locations <- matrix(nrow=0, ncol=1)
     }
   }
-  if(dim(FEM_time$coeff)[2]>1||dim(FEM_time$coeff)[3]>1)
+  if(dim(FEM.time$coeff)[2]>1||dim(FEM.time$coeff)[3]>1)
   {
-    if(dim(FEM_time$coeff)[2]>1 && lambdaS==1)
+    if(dim(FEM.time$coeff)[2]>1 && lambdaS==1)
       warning("the first value of lambdaS is being used")
-    if(dim(FEM_time$coeff)[3]>1 && lambdaT==1)
+    if(dim(FEM.time$coeff)[3]>1 && lambdaT==1)
       warning("the first value of lambdaT is being used")
-    f = FEM_time(coeff=array(FEM_time$coeff[,lambdaS,lambdaT]),time_mesh=FEM_time$mesh_time,FEMbasis=FEM_time$FEMbasis,FLAG_PARABOLIC=FEM_time$FLAG_PARABOLIC)
+    f = FEM.time(coeff=array(FEM.time$coeff[,lambdaS,lambdaT]),time_mesh=FEM.time$mesh_time,FEMbasis=FEM.time$FEMbasis,FLAG_PARABOLIC=FEM.time$FLAG_PARABOLIC)
   }
   else
-    f = FEM_time
+    f = FEM.time
 
   res <- NULL
 
-  if(class(FEM_time$FEMbasis$mesh)=='MESH.2D'){
+  if(class(FEM.time$FEMbasis$mesh)=='mesh.2D'){
     ndim = 2
     mydim = 2
-    res = CPP_eval.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
-  }else if(class(FEM_time$FEMbasis$mesh)=='MESH.2.5D'){
+    res = CPP_eval.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+  }else if(class(FEM.time$FEMbasis$mesh)=='mesh.2.5D'){
     ndim = 3
     mydim = 2
-    res = CPP_eval.manifold.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
-  }else if(class(FEM_time$FEMbasis$mesh)=='MESH.3D'){
+    res = CPP_eval.manifold.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+  }else if(class(FEM.time$FEMbasis$mesh)=='mesh.3D'){
     ndim = 3
     mydim = 3
-    res = CPP_eval.volume.FEM_time(f, locations, time_locations, incidence_matrix, FEM_time$FLAG_PARABOLIC, TRUE, ndim, mydim)
+    res = CPP_eval.volume.FEM.time(f, locations, time_locations, incidence_matrix, FEM.time$FLAG_PARABOLIC, TRUE, ndim, mydim)
   }
 
   return(as.matrix(res))

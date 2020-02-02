@@ -22,7 +22,7 @@ sd_errore = 0.075
 vertici <- read.table(paste0("Data/3D/",nome_mesh,"_vertici.txt"), quote="\"", comment.char="")
 tetraedri <- read.table(paste0("Data/3D/",nome_mesh,"_tetraedri.txt"), quote="\"", comment.char="")
 
-mesh <- fdaPDE::create.MESH.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
+mesh <- fdaPDE::create.mesh.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
 FEMbasis <- fdaPDE::create.FEM.basis(mesh)
 
 # Load data for exact solution

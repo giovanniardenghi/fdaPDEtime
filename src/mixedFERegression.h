@@ -15,8 +15,8 @@
 #define JOB_INIT -1
 #define JOB_END -2
 #define USE_COMM_WORLD -987654
-//! A base class for the smooth regression.
 
+//! A base class for the smooth regression.
 template<typename InputHandler, typename Integrator, UInt ORDER, UInt mydim, UInt ndim>
 class MixedFERegressionBase
 {
@@ -25,15 +25,15 @@ class MixedFERegressionBase
 		const MeshHandler<ORDER, mydim, ndim> &mesh_;
 		const InputHandler& regressionData_;
 
-		SpMat R1_;	//! North-east block of system matrix matrixNoCov_
-		SpMat R0_;	//! South-east block of system matrix matrixNoCov_
-		SpMat psi_; //! Psi matrix of the model
-		SpMat A_;	//A_.asDiagonal() = diag(|A_1|,...,|A_N|) areal matrix
+		SpMat R1_;	//! Finite Element matrix associated to the bilinear form a
+		SpMat R0_;	//! Mass matrix in space
+		SpMat psi_; //! Matrix of the evaluations of the spatial basis functions in the space locations
+		SpMat A_;		//! A_.asDiagonal() = diag(|A_1|,...,|A_N|) areal matrix
 
 		VectorXr forcingTerm_;
 
-		void setPsi(); 	//! A member function computing the Psi matrix
-		void setA();
+		void setPsi(); 	//! A method computing psi_
+		void setA();		//! A method computing A_
 
 	public:
 		MixedFERegressionBase(const MeshHandler<ORDER,mydim,ndim>& mesh, const InputHandler& regressionData): mesh_(mesh), regressionData_(regressionData) {};
@@ -60,6 +60,7 @@ class MixedFERegression : public MixedFERegressionBase<InputHandler, Integrator,
 		}
 };
 
+//! A class for the construction of the temporal matrices needed for the parabolic case
 template<typename InputHandler, typename Integrator, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE>
 class MixedSplineRegression
 {
@@ -67,9 +68,9 @@ class MixedSplineRegression
 		const std::vector<Real>& mesh_time_;
 		const InputHandler& regressionData_;
 
-		SpMat phi_;
+		SpMat phi_;   //! Matrix of the evaluations of the spline basis functions in the time locations
 		SpMat Pt_;
-		SpMat timeMass_;
+		SpMat timeMass_; //! Mass matrix in time
 
 	public:
 		MixedSplineRegression(const std::vector<Real>& mesh_time, const InputHandler& regressionData):mesh_time_(mesh_time), regressionData_(regressionData){};
@@ -84,7 +85,7 @@ class MixedSplineRegression
 
 };
 
-//! A LinearSystem class: A class for the construction of the temporal matrices for the separable case (FLAG_PARABOLIC = TRUE)
+//! A class for the construction of the temporal matrices needed for the separable case
 template<typename InputHandler>
 class MixedFDRegression
 {
@@ -92,24 +93,29 @@ class MixedFDRegression
 		const std::vector<Real>& mesh_time_;
 		const InputHandler& regressionData_;
 
-		SpMat derOpL_;
+		SpMat derOpL_; //!matrix associated with derivation in time
 
 	public:
 		MixedFDRegression(const std::vector<Real>& mesh_time, const InputHandler& regressionData):mesh_time_(mesh_time), regressionData_(regressionData){};
 
-    void setDerOperator();
-
+    void setDerOperator(); //! sets derOpL_
 		inline SpMat const & getDerOpL() const { return derOpL_; }
 
 };
 
+//! A class that stores all the needed matrices and contains the methods necessary to assemble and solve the final system
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
 class SpaceTimeRegression
 {
 	const MeshHandler<ORDER, mydim, ndim> &mesh_;
 	const std::vector<Real>& mesh_time_;
-	const UInt N_;
-	UInt M_;
+	const UInt N_; //! Number of spatial basis functions. The final system ha dimension 2N_*M_
+	const UInt M_;
+	/*!
+		M_= number of temporal basis functions for parabolic problem.
+		M_= number of time istants -1 for parabolic problem.
+		M_= 1. This happens only when initial condition for parabolic problem are not provided and has to be estimated solving a "only-space" problem
+	*/
   const InputHandler& regressionData_;
 	// Separable case:
 	//  system matrix= 	| B^T * Ak *B + lambdaT*Ptk |  -lambdaS*R1k^T  |   +  |B^T * Ak * (-H) * B |  O |   =  matrixNoCov + matrixOnlyCov
@@ -121,7 +127,6 @@ class SpaceTimeRegression
 
 
 	SpMat matrixNoCov_;	//! System matrix with psi^T*psi or psi^T*A*psi in north-west block  (is the full system matrix if no covariates)
-	// SpMat matrixOnlyCov_; //! coeffmatrix=matrixNoCov+matrixOnlyCov
 
 	//! kron(IM,Ps) (separable version)
 	SpMat Psk_;
@@ -134,7 +139,7 @@ class SpaceTimeRegression
 	//! kron(IM,R0)
 	SpMat R0k_;
 	/*! kron(phi,psi) for separable case
-	 	kron(IM,psi) 	for parabolic case
+	 		kron(IM,psi) 	for parabolic case
 	*/
 	SpMat B_;
 	//! Kronecker product of the matrix W (1/domainArea) and identity
@@ -151,51 +156,38 @@ class SpaceTimeRegression
 	bool isRcomputed_=false; //! true if the matrix R0k has been factorized, false otherwise
 	Eigen::SparseLU<SpMat> R_; //! Stores the factorization of R0k_
 
-	// MatrixXr Q_;  //! Identity - H, projects onto the orthogonal subspace
-	// MatrixXr H_; //! The hat matrix of the regression
-
 	VectorXr rhs_ft_correction_;	//! right hand side correction for the forcing term:
 	VectorXr rhs_ic_correction_;	//!Initial condition correction (parabolic case)
 	VectorXr _rightHandSide;         //!A Eigen::VectorXr: Stores the system right hand side.
-	MatrixXv _solution; //!A Eigen::VectorXr: Stores the system solution.
+	MatrixXv _solution; //!A Eigen::VectorXv: Stores the system solution.
 	MatrixXr _dof;          //! A Eigen::MatrixXr storing the computed dofs
 	MatrixXr _GCV;	 //! A Eigen::MatrixXr storing the computed GCV
-	UInt bestLambdaS_=0;	//!Stores the index of the lambdaS of best GCV
-	UInt bestLambdaT_=0;	//!Stores the index of the lambdaT of best GCV
-	Real _bestGCV=10e20;	//!Stores the value of the bestGCV
+	UInt bestLambdaS_=0;	//!Stores the index of the best lambdaS according to GCV
+	UInt bestLambdaT_=0;	//!Stores the index of the best lambdaT according to GCV
+	Real _bestGCV=10e20;	//!Stores the value of the best GCV
 	MatrixXv _beta;		//! A Eigen::MatrixXv storing the computed beta coefficients
 
-	//! A member function computing the no-covariates version of the system matrix
+	//! A method computing the no-covariates version of the system matrix
 	void buildMatrixNoCov(const SpMat& B,  const SpMat& SWblock,  const SpMat& SEblock);
-	//! A member function computing the matrix to be added to matrixNoCov_ to obtain the full system matrix
-	// void buildMatrixOnlyCov(const SpMat& B, const MatrixXr& H);
 	//! A function that given a vector u, performs Q*u efficiently
 	MatrixXr LeftMultiplybyQ(const MatrixXr& u);
-	//! A function which adds Dirichlet boundary conditions before solving the system ( Remark: BC for areal data are not implemented!)
+	//! A method which adds Dirichlet boundary conditions before solving the system ( Remark: BC for areal data are not implemented!)
 	void addDirichletBC();
-	//! A function which takes care of missing values setting to 0 the corresponding rows of B_
+	//! A method which takes care of missing values setting to 0 the corresponding rows of B_
 	void addNA();
-	//! A member function which builds the Q matrix
-	// void setQ();
-	// //! A member function which builds the H matrix
-	// void setH();
-	// //! A member function which builds the A vector containing the areas of the regions in case of areal data
-	// void setAk();
-
-	//! A member function returning the system right hand data
+	//! A method returning the system right hand data
 	void getRightHandData(VectorXr& rightHandData);
-	//! A member function which builds all the matrices needed for assembling matrixNoCov_
+	//! A method which builds all the matrices needed for assembling matrixNoCov_
 	void buildMatrices();
-	//! A member function computing the dofs
+	//! A method computing the dofs
 	void computeDegreesOfFreedom(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
-	//! A function computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
+	//! A method computing dofs in case of exact GCV, it is called by computeDegreesOfFreedom
 	void computeDegreesOfFreedomExact(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
-	//! A function computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
+	//! A method computing dofs in case of stochastic GCV, it is called by computeDegreesOfFreedom
 	void computeDegreesOfFreedomStochastic(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
-	//! A function computing GCV from the dofs
+	//! A method computing GCV from the dofs
 	void computeGeneralizedCrossValidation(UInt output_indexS, UInt output_indexT, Real lambdaS, Real lambdaT);
-
-	//! A function to factorize the system, using Woodbury decomposition when there are covariates
+	//! A method to factorize the system, using Woodbury decomposition useful when there are covariates
 	void system_factorize();
 	//! A function which solves the factorized system
 	template<typename Derived>
@@ -203,41 +195,31 @@ class SpaceTimeRegression
 
 public:
 	SpaceTimeRegression(const MeshHandler<ORDER,mydim,ndim>& mesh, const std::vector<Real>& mesh_time, const InputHandler& regressionData):
-		    mesh_(mesh), mesh_time_(mesh_time), N_(mesh_.num_nodes()), regressionData_(regressionData),_dof(regressionData_.getDOF_matrix())
-				{
-					if(mesh_time.size()==1)
-						M_=1;
-					else
-						M_ = regressionData.getFlagParabolic() ? mesh_time.size()-1 : mesh_time.size()+SPLINE_DEGREE-1;
-				};
-	//! The function solving the system, used by the children classes. Saves the result in _solution
+		    mesh_(mesh), mesh_time_(mesh_time), N_(mesh_.num_nodes()), M_(mesh_time.size()==1? 1: regressionData.getFlagParabolic() ? mesh_time.size()-1 : mesh_time.size()+SPLINE_DEGREE-1),
+				regressionData_(regressionData),_dof(regressionData_.getDOF_matrix()){}
 	/*!
-	    \param oper an operator, which is the Stiffness operator in case of Laplacian regularization
-	    \param u the forcing term, will be used only in case of anysotropic nonstationary regression
+		The function that builds the needed matrices, for each combination of lambdaS
+		and lambdaT assembles the system matrix and right hand side and solves the
+		corresponding system
 	*/
 	void apply();
-
-	//! A inline member that returns a VectorXr, returns the whole solution_.
+	//! A  method returning the computed solution
 	MatrixXv const & getSolution() const{return _solution;}
-	//! A function returning the computed dofs of the model
+	//! A method returning the computed dofs of the model
 	MatrixXr const & getDOF() const{return _dof;}
-	//! A function returning the computed GCV of the model
+	//! A method returning the computed GCV of the model
 	MatrixXr const & getGCV() const{return _GCV;}
-	//! A function returning the computed beta coefficients of the model
+	//! A method returning the computed beta coefficients of the model
 	MatrixXv const & getBeta() const{return _beta;}
-	//! A function returning the index of the lambdaS of the best GCV
+	//! A method returning the index of the best lambdaS according to GCV
 	UInt getBestLambdaS(){return bestLambdaS_;}
-	//! A function returning the index of the lambdaT of the best GCV
+	//! A method returning the index of the best lambdaT according to GCV
 	UInt getBestLambdaT(){return bestLambdaT_;}
 
 
 };
 
 
-
-
-
 #include "mixedFERegression_imp.h"
-// #include "timeRegression_imp.h"s
 
 #endif

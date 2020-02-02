@@ -1,9 +1,9 @@
-#' Create a \code{MESH.2.5D} object from the connectivty matrix and nodes locations
+#' Create a \code{mesh.2.5D} object from the connectivty matrix and nodes locations
 #'
 #' @param nodes A #nodes-by-3 matrix specifying the locations of each node
 #' @param triangles A #triangles-by-3*order matrix specifying the indices of the nodes in each triangle
 #' @param order Either "1" or "2". Order of the Finite Element basis default is order = 1
-#' @return An object of the class \code{MESH.2.5D} with the following output:
+#' @return An object of the class \code{mesh.2.5D} with the following output:
 #' \item{\code{nnodes}}{The #nodes contained in the mesh}
 #' \item{\code{ntriangles}}{The #triangles contained in the mesh}
 #' \item{\code{nodes}}{A #nodes-by-3 matrix containing the x,y and z coordinate for each point of the mesh}
@@ -20,10 +20,10 @@
 #' triangles=sphere$triangles
 #'
 #' #Create the triangulated mesh from the connectivity matrix and nodes locations
-#' mesh=create.MESH.2.5D(nodes,triangles)
+#' mesh=create.mesh.2.5D(nodes,triangles)
 #' 
 
-create.MESH.2.5D<- function(nodes, triangles, order = 1)
+create.mesh.2.5D<- function(nodes, triangles, order = 1)
 {
   nnodes = dim(nodes)[1]
   
@@ -36,30 +36,30 @@ create.MESH.2.5D<- function(nodes, triangles, order = 1)
   }
   out = list(nnodes=nnodes, ntriangles=ntriangles, nodes=as.matrix(nodes), triangles = as.matrix(triangles), order=as.integer(order))
   
-  class(out)<-"MESH.2.5D"
+  class(out)<-"mesh.2.5D"
   
   return(out)
 }
 
 
 #' Double the order of a fist order Finite Element mesh by adding middle points to each side of the triangles in the triangulation
-#' @param mesh an object of class 'MESH.2.5D' that is the starting mesh of order 1
+#' @param mesh an object of class 'mesh.2.5D' that is the starting mesh of order 1
 #' @param bc A vector specifying the indices of the nodes on which boundary conditions are applied.
 #' @return If no boundaries conditions are passed:
-#' \item{\code{mesh}}{An object of class 'MESH.2.5D' with the mesh of order 2.} Otherwhise a \code{list} with parameters:
-#' \item{\code{mesh}}{An object of class 'MESH.2.5D' with the mesh of order 2.}
+#' \item{\code{mesh}}{An object of class 'mesh.2.5D' with the mesh of order 2.} Otherwhise a \code{list} with parameters:
+#' \item{\code{mesh}}{An object of class 'mesh.2.5D' with the mesh of order 2.}
 #' \item{\code{bc_index}}{An update of the vector specifying the indices of the nodes on which boundary conditions are applied.}
-#' @usage second.order.MESH.2.5D(mesh,bc=NULL)
-#' @seealso \code{\link{create.MESH.2.5D}}
+#' @usage second.order.mesh.2.5D(mesh,bc=NULL)
+#' @seealso \code{\link{create.mesh.2.5D}}
 #' @examples
-#' #Loading mesh hub, a MESH.2.5D object of order=1 contained in the package
+#' #Loading mesh hub, a mesh.2.5D object of order=1 contained in the package
 #' data(hub)
 #' #Apply the function to generate a surface mesh of order 2
-#' hub_order2 = second.order.MESH.2.5D(hub)
+#' hub_order2 = second.order.mesh.2.5D(hub)
 
-second.order.MESH.2.5D<-function(mesh,bc=NULL){
-  if(class(mesh) != 'MESH.2.5D'){
-    stop('This method is implemented only for a mesh of class MESH.2.5D')
+second.order.mesh.2.5D<-function(mesh,bc=NULL){
+  if(class(mesh) != 'mesh.2.5D'){
+    stop('This method is implemented only for a mesh of class mesh.2.5D')
   }else if(mesh$order != 1){
     stop('The object mesh must have order = 1')
   }else{
@@ -121,11 +121,11 @@ second.order.MESH.2.5D<-function(mesh,bc=NULL){
   }
   if(is.null(bc)){
     out = list(nnodes=nrow(V), ntriangles=nrow(T), nodes=V, triangles = T, order=2)
-    class(out)<-"MESH.2.5D"
+    class(out)<-"mesh.2.5D"
     return(out)
   }else{
     out = list(nnodes=nrow(V), ntriangles=nrow(T), nodes=V, triangles = T, order=2)
-    class(out)<-"MESH.2.5D"
+    class(out)<-"mesh.2.5D"
     retlist = list(mesh = out, bc_index=bc)
     return(retlist)
   }

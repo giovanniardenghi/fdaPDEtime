@@ -9,7 +9,7 @@ nodes=sphere3Ddata$nodes
 tetrahedrons=sphere3Ddata$tetrahedrons
 
 #Create the triangulated mesh from the connectivity matrix and nodes locations
-sphere3D=create.MESH.3D(nodes,tetrahedrons)
+sphere3D=create.mesh.3D(nodes,tetrahedrons)
 
 ##Define the number of nodes
 nnodes=sphere3D$nnodes
@@ -77,8 +77,8 @@ triangoli <- read.table(paste0("Data/2.5D/",nome_mesh,"_triangoli.txt"), quote="
 
 #order 1
 
-mesh <- fdaPDE::create.MESH.2.5D(nodes = vertici[,1:3],triangles = triangoli[,1:3])
-plot.MESH.2.5D(mesh)
+mesh <- fdaPDE::create.mesh.2.5D(nodes = vertici[,1:3],triangles = triangoli[,1:3])
+plot.mesh.2.5D(mesh)
 
 FEMbasis = create.FEM.basis(mesh)
 ## Define a function as expansion of this basis
@@ -91,8 +91,8 @@ plot.FEM(FEM_object)
 
 #order 2
 
-mesh=second.order.MESH.2.5D(mesh)
-plot.MESH.2.5D(mesh)
+mesh=second.order.mesh.2.5D(mesh)
+plot.mesh.2.5D(mesh)
 
 FEMbasis = create.FEM.basis(mesh)
 ## Define a function as expansion of this basis
@@ -112,9 +112,9 @@ nome_mesh = "meshCcicciona"
 vertici <- read.table(paste0("Data/3D/",nome_mesh,"_vertici.txt"), quote="\"", comment.char="")
 tetraedri <- read.table(paste0("Data/3D/",nome_mesh,"_tetraedri.txt"), quote="\"", comment.char="")
 
-mesh <- fdaPDE::create.MESH.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
+mesh <- fdaPDE::create.mesh.3D(nodes = vertici[,1:3],tetrahedrons = tetraedri[,1:4])
 
-plot.MESH.3D(mesh)
+plot.mesh.3D(mesh)
 
 FEMbasis = create.FEM.basis(mesh)
 ## Define a function as expansion of this basis

@@ -4,5 +4,5 @@
 \alias{mesh.2D.rectangular}
 \title{Simple Rectangular mesh}
 \description{
-A simple rectangular mesh. This is a MESH2D object created with \code{create.MESH.2D}.
+A simple rectangular mesh. This is a MESH2D object created with \code{create.mesh.2D}.
 }
