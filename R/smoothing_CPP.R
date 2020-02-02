@@ -97,10 +97,20 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
     storage.mode(IC_time_locations)<-"double"
 
     ##TODO: change the way of passing BC to IC estimation (waiting to know if BC are assumed constant over time or not)
-    BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    storage.mode(BC_indices_IC)<-"integer"
-    storage.mode(BC_values_IC)<-"double"
+    if(length(BC$BC_indices!=0))
+    {
+      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
+    else
+    {
+      BC_indices_IC = BC$BC_indices
+      BC_values_IC = BC$BC_values
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
 
     ## set of lambdas for GCV in IC estimation
     lambdaSIC <- 10^seq(-7,3,0.1)
@@ -252,10 +262,20 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
     IC_time_locations=0
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
-    BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    storage.mode(BC_indices_IC)<-"integer"
-    storage.mode(BC_values_IC)<-"double"
+    if(length(BC$BC_indices!=0))
+    {
+      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
+    else
+    {
+      BC_indices_IC = BC$BC_indices
+      BC_values_IC = BC$BC_values
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
     lambdaSIC <- 10^seq(-7,3,0.1)
     lambdaSIC <- as.matrix(lambdaSIC)
     storage.mode(lambdaSIC) <- "double"
@@ -413,10 +433,20 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
 
-    BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-    storage.mode(BC_indices_IC)<-"integer"
-    storage.mode(BC_values_IC)<-"double"
+    if(length(BC$BC_indices!=0))
+    {
+      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
+    else
+    {
+      BC_indices_IC = BC$BC_indices
+      BC_values_IC = BC$BC_values
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
 
     lambdaSIC <- 10^seq(-7,3,0.1)
     lambdaSIC <- as.matrix(lambdaSIC)

@@ -12,7 +12,7 @@
 #'  Devillers, O. et al. 2001. Walking in a Triangulation, Proceedings of the Seventeenth Annual Symposium on Computational Geometry
 
 
-eval.FEM <- function(FEM, locations, incidence_matrix = NULL)
+eval.FEM <- function(FEM, locations=NULL, incidence_matrix = NULL)
 {
   if (is.null(FEM))
     stop("FEM required;  is NULL.")
