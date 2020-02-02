@@ -1,5 +1,5 @@
 CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observations, FEMbasis,time_mesh, lambdaS, lambdaT,
-                                    covariates, incidence_matrix, ndim, mydim, BC, FLAG_MASS, FLAG_PARABOLIC, IC,GCV, GCVMETHOD, nrealizations)
+                                    covariates=NULL, incidence_matrix=NULL, ndim, mydim, BC=NULL, FLAG_MASS, FLAG_PARABOLIC, IC,GCV, GCVMETHOD=2, nrealizations=100,DOF=TRUE,DOF_matrix=NULL)
 {
 
   # C++ function for manifold works with vectors not with matrices
@@ -17,6 +17,11 @@ CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observat
     covariates<-matrix(nrow = 0, ncol = 1)
   }
 
+  if(is.null(DOF_matrix))
+  {
+    DOF_matrix<-matrix(nrow = 0, ncol = 1)
+  }
+
   if(is.null(locations))
   {
     locations<-matrix(nrow = 0, ncol = ndim)
@@ -30,33 +35,6 @@ CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observat
   if(is.null(IC))
   {
     IC<-matrix(nrow = 0, ncol = 1)
-  }
-
-  if(is.null(time_locations))
-  {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_locations<-time_mesh
-    }
-    else
-    {
-      NumTimeInstants = length(time_mesh)
-      time_locations<-time_mesh[1:NumTimeInstants-1]
-    }
-  }
-
-  if(is.null(time_mesh))
-  {
-    if(FLAG_PARABOLIC==FALSE)
-    {
-      time_mesh<-time_locations
-    }
-    else
-    {
-      NumTimeInstants = length(time_locations)
-      lastTimeDiff = time_locations[NumTimeInstants]-time_locations[NumTimeInstants-1]
-      time_mesh<-c(time_locations,time_locations[NumTimeInstants]+lastTimeDiff)
-    }
   }
 
   if(is.null(BC$BC_indices))
@@ -83,7 +61,7 @@ CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observat
   storage.mode(time_locations) <- "double"
   time_mesh <- as.matrix(time_mesh)
   storage.mode(time_mesh) <- "double"
-  data <- as.vector(observations)
+  observations <- as.vector(observations)
   storage.mode(observations) <- "double"
   storage.mode(FEMbasis$mesh$order) <- "integer"
   storage.mode(FEMbasis$mesh$nnodes) <- "integer"
@@ -115,13 +93,76 @@ CPP_smooth.manifold.FEM.time.basis<-function(locations, time_locations, observat
   storage.mode(GCVMETHOD) <- "integer"
 
   ## Call C++ function
+  ICsol=NA
+  if(nrow(IC)==0 && FLAG_PARABOLIC)
+  {
+    IC_time_locations=0
+    IC_time_locations=as.matrix(IC_time_locations)
+    storage.mode(IC_time_locations)<-"double"
 
+    ##TODO: change the way of passing BC to IC estimation (waiting to know if BC are assumed constant over time or not)
+    if(length(BC$BC_indices!=0))
+    {
+      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
+    else
+    {
+      BC_indices_IC = BC$BC_indices
+      BC_values_IC = BC$BC_values
+      storage.mode(BC_indices_IC)<-"integer"
+      storage.mode(BC_values_IC)<-"double"
+    }
 
-  bigsol <- .Call("regression_Laplace", locations, time_locations, data, FEMbasis$mesh, time_mesh, FEMbasis$order,
+    ## set of lambdas for GCV in IC estimation
+    lambdaSIC <- 10^seq(-7,3,0.1)
+    lambdaSIC <- as.matrix(lambdaSIC)
+    storage.mode(lambdaSIC) <- "double"
+    ## call the smoothing function with initial observations to estimates the IC
+    ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
+                  FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
+                  incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                  IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+
+    ## shifting the lambdas interval if the best lambda is the smaller one and retry smoothing
+    if((ICsol[[4]][1]+1)==1)
+    {
+      lambdaSIC <- 10^seq(-9,-7,0.1)
+      lambdaSIC <- as.matrix(lambdaSIC)
+      storage.mode(lambdaSIC) <- "double"
+      ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
+                    FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
+                    incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                    IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+    }
+    else
+    {
+      ## shifting the lambdas interval if the best lambda is the higher one and retry smoothing
+      if((ICsol[[4]][1]+1)==length(lambdaSIC))
+      {
+        lambdaSIC <- 10^seq(3,5,0.1)
+        lambdaSIC <- as.matrix(lambdaSIC)
+        storage.mode(lambdaSIC) <- "double"
+        ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:nrow(locations)],
+                      FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), as.matrix(covariates[,1]),
+                      incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                      IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
+      }
+    }
+    IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] ## best IC estimation
+    ## return a FEM object containing IC estimates with best lambda and best lambda index
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1])
+  }
+  IC <- as.matrix(IC)
+  storage.mode(IC) <- "double"
+
+  bigsol <- .Call("regression_Laplace", locations, time_locations, observations, FEMbasis$mesh, time_mesh, FEMbasis$order,
                   mydim, ndim, lambdaS, lambdaT, covariates, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, FLAG_PARABOLIC,
-                  IC, GCV, GCVMETHOD, nrealizations, PACKAGE = "fdaPDEtime")
+                  IC, GCV, GCVMETHOD, nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
 
-  return(bigsol)
+  return(c(bigsol,ICsol))
 }
 
 CPP_eval.manifold.FEM.time = function(FEM.time, locations, time_locations, incidence_matrix, FLAG_PARABOLIC, redundancy, ndim, mydim)

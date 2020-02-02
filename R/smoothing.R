@@ -144,7 +144,7 @@ smooth.FEM.time.basis<-function(locations = NULL, time_locations=NULL, observati
   }
 
 
-  checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, DOF, DOF_matrix, space_varying, mydim, ndim)
+  checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, DOF, DOF_matrix, space_varying, ndim, mydim)
   observations<-as.vector(observations)
 
   if(FLAG_PARABOLIC)
@@ -205,7 +205,7 @@ smooth.FEM.time.basis<-function(locations = NULL, time_locations=NULL, observati
     bigsol = CPP_smooth.manifold.FEM.time.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                           time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                           ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                          GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
+                                          GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
 
   }else if(class(FEMbasis$mesh) == 'MESH.3D'){
 
@@ -214,7 +214,7 @@ smooth.FEM.time.basis<-function(locations = NULL, time_locations=NULL, observati
     bigsol = CPP_smooth.volume.FEM.time.basis(locations=locations, time_locations=time_locations, observations=observations, FEMbasis=FEMbasis,
                                         time_mesh=time_mesh, lambdaS=lambdaS, lambdaT=lambdaT, covariates=covariates, incidence_matrix=incidence_matrix,
                                         ndim=ndim, mydim=mydim, BC=BC, FLAG_MASS=FLAG_MASS, FLAG_PARABOLIC=FLAG_PARABOLIC, IC=IC, GCV=GCV,
-                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations)
+                                        GCVMETHOD=GCVMETHOD, nrealizations=nrealizations,DOF=DOF,DOF_matrix=DOF_matrix)
 
   }
 

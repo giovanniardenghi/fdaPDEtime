@@ -163,7 +163,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::setPsi()
 			{
 				if (tab[k] != 0)
 				{
-					psi_.insert(i,k) = tab[k]/A_.coeffRef(i,i); //divide by |D_i|
+					psi_.insert(i,k) = tab[k]/A_.coeff(i,i); //divide by |A_i|
 				}
 			}
 		}

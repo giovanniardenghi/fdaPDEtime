@@ -293,25 +293,28 @@ SEXP eval_FEM_fd(SEXP Rmesh, SEXP Rlocations, SEXP RincidenceMatrix, SEXP Rcoef,
 */
 SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_locations, SEXP RincidenceMatrix, SEXP Rcoef, SEXP Rorder, SEXP Rfast, SEXP Rflag_parabolic, SEXP Rmydim, SEXP Rndim)
 {
+  UInt mydim = INTEGER(Rmydim)[0];
+  UInt ndim  = INTEGER(Rndim)[0];
 	UInt n = INTEGER(Rf_getAttrib(Rlocations, R_DimSymbol))[0];
-	UInt ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
-	UInt nt = Rf_length(Rmesh_time);
+  UInt ns;
+  if(ndim==2)
+  	ns = INTEGER(Rf_getAttrib(VECTOR_ELT(Rmesh, 0), R_DimSymbol))[0];
+  else
+    ns = INTEGER(VECTOR_ELT(Rmesh,0))[0];
+  UInt nt = Rf_length(Rmesh_time);
 	UInt nRegions = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[0];
 	UInt nElements = INTEGER(Rf_getAttrib(RincidenceMatrix, R_DimSymbol))[1]; //number of triangles/tetrahedron if areal data
-
 
 	//Declare pointer to access data from C++
 	Real *X, *Y, *Z, *mesh_time, *t;
 	UInt **incidenceMatrix;
 	double *coef;
-	int order, mydim, ndim;
+	int order;
 	bool fast,flag_par;
 
 	coef  = REAL(Rcoef);
   order = INTEGER(Rorder)[0];
   fast  = INTEGER(Rfast)[0];
-  mydim = INTEGER(Rmydim)[0];
-  ndim  = INTEGER(Rndim)[0];
 	flag_par = INTEGER(Rflag_parabolic)[0];
 	mesh_time = REAL(Rmesh_time);
 	t = REAL(Rtime_locations);
@@ -389,12 +392,14 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	phi.makeCompressed();
 
 	SEXP result;
-
-	PROTECT(result=Rf_allocVector(REALSXP, n));
+  if(nRegions==0)
+  	PROTECT(result=Rf_allocVector(REALSXP, n));
+  else
+    PROTECT(result=Rf_allocVector(REALSXP, nRegions));
 	Real* COEFF;
 	COEFF = (double*) malloc(sizeof(double)*ns);
 	std::vector<Real> XX,YY,ZZ;
-	std::vector<UInt> indices;
+  std::vector<UInt> indices;
 
   //!evaluates the solution on the given points location at the first
   //!node of the time mesh to initialize the array of results and retrieve the points out of mesh (NA)
@@ -419,18 +424,24 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 		{
 			COEFF[j] = coef[i*ns+j];
 		}
-		for(UInt k=0; k<n; k++)
-		{
-			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
-			{
-				if (ndim==3)
-				{
-					XX.push_back(X[k]);
-					YY.push_back(Y[k]);
-					ZZ.push_back(Z[k]);
-					indices.push_back(k);
-				}
-				else //ndim==2
+    if (ndim==3)
+    {
+  		for(UInt k=0; k<n; k++)
+  		{
+  			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
+  			{
+  				XX.push_back(X[k]);
+  				YY.push_back(Y[k]);
+  				ZZ.push_back(Z[k]);
+  				indices.push_back(k);
+  			}
+      }
+    }
+  	else //ndim==2
+    {
+  		for(UInt k=0; k<n; k++)
+  		{
+  			if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
 				{
 					XX.push_back(X[k]);
 					YY.push_back(Y[k]);
@@ -438,15 +449,31 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 				}
 			}
 		}
-		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), incidenceMatrix, nRegions, nElements, COEFF, order, fast, mydim, ndim);
+    UInt count=0;
+    UInt **INCIDENCE_MATRIX;
+    INCIDENCE_MATRIX = (UInt**)malloc(sizeof(UInt*)*phi.col(i).nonZeros());
+  	for (UInt k=0; k<nRegions; k++)
+  	{
+      if(phi.coeff(k,i)!=0 && !ISNA(REAL(result)[k]))
+      {
+        INCIDENCE_MATRIX[count] = (UInt*) malloc(sizeof(UInt)*nElements);
+    		for (UInt j=0; j<nElements; j++)
+    		{
+    			INCIDENCE_MATRIX[count][j] = incidenceMatrix[k][j];
+    		}
+        indices.push_back(k);
+        count++;
+      }
+    }
+		temp = CPP_eval_FEM_fd(Rmesh, XX.data(), YY.data(), ZZ.data(), XX.size(), INCIDENCE_MATRIX, phi.col(i).nonZeros(), nElements, COEFF, order, fast, mydim, ndim);
 		for(UInt k=0; k<indices.size(); ++k)
 		{
 			REAL(result)[indices[k]] = REAL(result)[indices[k]] + REAL(temp)[k]*phi.coeff(indices[k],i);
 		}
-		XX.clear();YY.clear();ZZ.clear();indices.clear();
+		XX.clear();YY.clear();ZZ.clear();indices.clear();//for (int l=0; l<phi.col(i).nonZeros(); l++){free(INCIDENCE_MATRIX[l]);}free(INCIDENCE_MATRIX);
 	}
 
-	free(X); free(Y); free(Z);
+	free(X); free(Y); free(Z); free(COEFF);
 	for (int i=0; i<nRegions; i++)
 	{
 		free(incidenceMatrix[i]);

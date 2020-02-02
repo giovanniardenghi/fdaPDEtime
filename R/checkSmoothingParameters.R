@@ -134,11 +134,11 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
   # }
   if(is.null(locations))
   {
-    if(!is.null(time_locations))
+    if(!is.null(time_locations) && is.null(incidence_matrix))
       if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || ncol(observations) != nrow(time_locations))
         stop("'locations' and 'observations' have incompatible size;")
 
-    if(is.null(time_locations))
+    if(is.null(time_locations) && is.null(incidence_matrix))
     {
       if(FLAG_PARABOLIC)
         if(ifelse(class(FEMbasis$mesh) == "MESH.2D", nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes) != nrow(observations) || (nrow(time_mesh)-1) != ncol(observations))
@@ -154,7 +154,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     if(ncol(locations) != ndim)
       stop("'locations' must be a ndim-columns matrix;")
 
-    if(!is.null(time_locations))
+    if(!is.null(time_locations) && is.null(incidence_matrix))
     {
       if(nrow(locations) != nrow(observations))
         stop("'locations' and 'observations' have incompatible size;")
@@ -162,7 +162,7 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       if(nrow(time_locations) != ncol(observations))
         stop("'time_locations' and 'observations' have incompatible size;")
     }
-    if(is.null(time_locations))
+    if(is.null(time_locations) && is.null(incidence_matrix))
     {
       if(FLAG_PARABOLIC)
       {
@@ -208,11 +208,11 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     warning("different values of lambdaS or lambdaT have been passed but GCV=FALSE,
               if you want to compute the GCV please set GCV=TRUE")
 
-  if(!is.null(covariates))
-  {
-    if(nrow(covariates) != nrow(observations))
-      stop("'covariates' and 'observations' have incompatible size;")
-  }
+  # if(!is.null(covariates))
+  # {
+  #   if(nrow(covariates) != nrow(observations))
+  #     stop("'covariates' and 'observations' have incompatible size;")
+  # }
 
   if (!is.null(incidence_matrix))
   {

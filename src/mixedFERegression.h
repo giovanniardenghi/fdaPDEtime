@@ -137,7 +137,7 @@ class SpaceTimeRegression
 	 	kron(IM,psi) 	for parabolic case
 	*/
 	SpMat B_;
-	//! Kronecker product of the matrix W (1/domainArea) and identity
+	//! Kronecker product of the matrix A (domainArea) and identity
 	SpMat Ak_; //Ak_.asDiagonal() = kron(IM,diag(|A_1|,...,|A_N|)) areal matrix
 
 	MatrixXr U_;	//! psi^T * W or psi^T * A * W padded with zeros, needed for Woodbury decomposition
