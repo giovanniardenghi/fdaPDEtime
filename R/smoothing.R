@@ -254,14 +254,14 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   GCV_ = bigsol[[3]]
   bestlambda = bigsol[[4]]+1
   if(!is.null(covariates))
-    beta = bigsol[[5]]
+    beta = array(data=bigsol[[5]],dim=c(ncol(covariates),length(lambdaS),length(lambdaT)))
   else
     beta = NULL
 
   if(all(is.na(bigsol[[6]])))
     ICestimated = NULL
   else
-    ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]])
+    ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]],beta=bigsol[[9]])
 
   # Make FEM.time objects
   fit.FEM.time  = FEM.time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)

@@ -307,6 +307,7 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER,mydim, ndim>::setA()
 			}
 		}
 	}
+	A_.makeCompressed();
 }
 
 template<typename InputHandler, typename IntegratorSpace, UInt ORDER, typename IntegratorTime, UInt SPLINE_DEGREE, UInt ORDER_DERIVATIVE, UInt mydim, UInt ndim>
@@ -391,7 +392,10 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		SpMat X;
 		SpMat BBsmall(M_*N_,M_*N_);
 
-		BBsmall = B_.transpose()*B_;
+		if(regressionData_.getNumberOfRegions()==0)
+			BBsmall = B_.transpose()*B_;
+		else
+			BBsmall = B_.transpose()*Ak_*B_;
 
 		SpMat BB(2*M_*N_,2*M_*N_);
 
@@ -671,7 +675,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		R0k_ = R0;
 		Ak_ = RegressionSpace.getA();
 		Ptk_.resize(N_,N_);
-		LR0k_.resize(N_*M_,N_*M_);
+		LR0k_.resize(N_,N_);
 	}
 	else
 	{
@@ -942,7 +946,7 @@ void MixedSplineRegression<InputHandler, Integrator, SPLINE_DEGREE, ORDER_DERIVA
 		Spline<Integrator, SPLINE_DEGREE, ORDER_DERIVATIVE> spline(mesh_time_);
 		UInt M = spline.num_knots()-SPLINE_DEGREE-1;
 		UInt m = regressionData_.getNumberofTimeObservations();
-		
+
 		phi_.resize(m, M);
 		Real value;
 
