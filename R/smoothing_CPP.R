@@ -170,6 +170,9 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
     ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    time_locations=time_locations[2:nrow(time_locations)]
+    observations = observations[(NobsIC+1):length(observations)]
+    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -354,6 +357,9 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
     ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    time_locations=time_locations[2:nrow(time_locations)]
+    observations = observations[(NobsIC+1):length(observations)]
+    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -548,6 +554,9 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
     ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    time_locations=time_locations[2:nrow(time_locations)]
+    observations = observations[(NobsIC+1):length(observations)]
+    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
