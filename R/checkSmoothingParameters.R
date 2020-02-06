@@ -217,11 +217,11 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
     warning("different values of lambdaS or lambdaT have been passed but GCV=FALSE,
               if you want to compute the GCV please set GCV=TRUE")
 
-  # if(!is.null(covariates))
-  # {
-  #   if(nrow(covariates) != nrow(observations))
-  #     stop("'covariates' and 'observations' have incompatible size;")
-  # }
+  if(!is.null(covariates))
+  {
+    if(nrow(covariates) != nrow(observations)*ncol(observations))
+      stop("'covariates' and 'observations' have incompatible size;")
+  }
 
   if (!is.null(incidence_matrix))
   {
@@ -241,18 +241,17 @@ checkSmoothingParametersSize<-function(locations = NULL, time_locations=NULL, ob
       stop("'BC_indices' must be a column vector")
     if(ncol(BC$BC_values) != 1)
       stop("'BC_values' must be a column vector")
+    if(nrow(BC$BC_indices)>ifelse(class(FEMbasis$mesh)=='mesh.2D',nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes))
+      stop("'BC_indices' longer than the mesh")
     if(nrow(BC$BC_indices) != nrow(BC$BC_values))
       stop("'BC_indices' and 'BC_values' have incompatible size;")
 
     N=ifelse(class(FEMbasis$mesh) == "mesh.2D",nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes)
     #M=ifelse(FLAG_PARABOLIC==TRUE,length(time_mesh)-1,length(time_mesh)+2)
-    if(min(BC$BC_indices)<0)
+    if(any(BC$BC_indices)<0)
       stop("'BC_indices' elements must be non negative")
-    # if(max(BC$BC_indices)>(N*ifelse(is.null(time_mesh),length(time_locations),length(time_mesh))))
-    #     stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
-    if (FLAG_PARABOLIC==TRUE)
-      if(min(BC$BC_indices)<N)
-        stop("For parabolic problem 'BC_indices' corresponding to time 0 are not accepted;")
+    if(any(BC$BC_indices)>ifelse(class(FEMbasis$mesh)=='mesh.2D',nrow(FEMbasis$mesh$nodes),FEMbasis$mesh$nnodes))
+      stop("At least one index in 'BC_indices' larger then the number of 'nodes' in the mesh")
   }
 
   if (FLAG_PARABOLIC==TRUE && is.null(IC))

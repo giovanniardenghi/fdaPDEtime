@@ -156,9 +156,6 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   checkSmoothingParametersSize(locations, time_locations, observations, FEMbasis, time_mesh, lambdaS, lambdaT, covariates, PDE_parameters, incidence_matrix, BC, FLAG_MASS, FLAG_PARABOLIC, IC, GCV, DOF, DOF_matrix, space_varying, ndim, mydim)
   observations<-as.vector(observations)
 
-  if(FLAG_PARABOLIC)
-    BC$BC_indices<-BC$BC_indices-nrow(FEMbasis$mesh$nodes)
-
   if(is.null(time_locations))
   {
     if(FLAG_PARABOLIC && !is.null(IC))
@@ -254,14 +251,14 @@ smooth.FEM.time<-function(locations = NULL, time_locations=NULL, observations, F
   GCV_ = bigsol[[3]]
   bestlambda = bigsol[[4]]+1
   if(!is.null(covariates))
-    beta = bigsol[[5]]
+    beta = array(data=bigsol[[5]],dim=c(ncol(covariates),length(lambdaS),length(lambdaT)))
   else
     beta = NULL
 
   if(all(is.na(bigsol[[6]])))
     ICestimated = NULL
   else
-    ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]])
+    ICestimated = list(IC.FEM=bigsol[[6]],bestlambdaindex=bigsol[[7]],bestlambda=bigsol[[8]],beta=bigsol[[9]])
 
   # Make FEM.time objects
   fit.FEM.time  = FEM.time(f, time_mesh, FEMbasis, FLAG_PARABOLIC)

@@ -22,11 +22,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	Real pen=10e20; //penalty
 
-	if(regressionData_.getFlagParabolic() || M_==1)
+	for(UInt j=0; j<M_; j++)
 	{
 		for( auto i=0; i<nbc_indices; i++)
 		 {
-				id1=bc_indices[i];
+				id1=bc_indices[i]+N_*j;
 				id3=id1+N_*M_;
 
 				matrixNoCov_.coeffRef(id1,id1)=pen;
@@ -36,44 +36,6 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 				_rightHandSide(id1)=bc_values[i]*pen;
 				_rightHandSide(id3)=0;
 		 }
-	}
-	else //! Separable case
-	{
-		//! Evaluate the basis splines in the nodes of the time_mesh
-		Spline<IntegratorGaussP5,SPLINE_DEGREE,ORDER_DERIVATIVE>spline(mesh_time_);
-		MatrixXr phi(mesh_time_.size(),M_);
-		for (UInt i = 0; i < mesh_time_.size(); ++i)
-		{
-			for (UInt j = 0; j < M_; ++j)
-			{
-				phi(i,j) = spline.BasisFunction(SPLINE_DEGREE, j, mesh_time_[i]);
-			}
-		}
-		//! Solve the system phi*phi^T*x=phi^T*bc to find the coefficient of the b-splines basis expansion at dirichlet nodes
-		//! and apply the boundary conditions by penalization
-		Eigen::LDLT<MatrixXr> Phisolver(phi.transpose()*phi);
-		UInt ndt= nbc_indices/mesh_time_.size();
-
-		for( auto i=0; i<ndt; i++)
-		{
-			id1=bc_indices[i];
-			id3=id1+N_*M_;
-			VectorXr bcrhs(mesh_time_.size());
-			VectorXr bcsol(M_);
-			for (UInt j=0;j<mesh_time_.size();j++)
-			{
-				bcrhs(j)=bc_values[i+j*ndt];
-			}
-			bcsol = Phisolver.solve(phi.transpose()*bcrhs);
-			for(UInt j=0;j<M_;j++)
-			{
-				matrixNoCov_.coeffRef(id1+j*N_,id1+j*N_)=pen;
-				matrixNoCov_.coeffRef(id3+j*N_,id3+j*N_)=pen;
-
-				_rightHandSide(id1+j*N_)=bcsol(j)*pen;
-				_rightHandSide(id3+j*N_)=0;
-			}
-		}
 	}
 	matrixNoCov_.makeCompressed();
 }
@@ -392,7 +354,10 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		SpMat X;
 		SpMat BBsmall(M_*N_,M_*N_);
 
-		BBsmall = B_.transpose()*B_;
+		if(regressionData_.getNumberOfRegions()==0)
+			BBsmall = B_.transpose()*B_;
+		else
+			BBsmall = B_.transpose()*Ak_*B_;
 
 		SpMat BB(2*M_*N_,2*M_*N_);
 
@@ -672,7 +637,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		R0k_ = R0;
 		Ak_ = RegressionSpace.getA();
 		Ptk_.resize(N_,N_);
-		LR0k_.resize(N_*M_,N_*M_);
+		LR0k_.resize(N_,N_);
 	}
 	else
 	{
@@ -727,7 +692,9 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		R1k_.makeCompressed();
 		R0k_ = kroneckerProduct(IM,R0);
 		R0k_.makeCompressed();
-		Ak_ = kroneckerProduct(IM,RegressionSpace.getA());
+		SpMat Im(phi.rows(),phi.rows());
+		Im.setIdentity();
+		Ak_ = kroneckerProduct(Im,RegressionSpace.getA());
 		Ak_.makeCompressed();
 	}
 
