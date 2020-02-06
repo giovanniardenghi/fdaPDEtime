@@ -692,7 +692,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 		R1k_.makeCompressed();
 		R0k_ = kroneckerProduct(IM,R0);
 		R0k_.makeCompressed();
-		SpMat Im(regressionData_.getNumberofTimeObservations(),regressionData_.getNumberofTimeObservations());
+		SpMat Im(phi.rows(),phi.rows());
 		Im.setIdentity();
 		Ak_ = kroneckerProduct(Im,RegressionSpace.getA());
 		Ak_.makeCompressed();
