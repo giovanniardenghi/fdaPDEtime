@@ -97,22 +97,6 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
 
-    ##TODO: change the way of passing BC to IC estimation (waiting to know if BC are assumed constant over time or not)
-    if(length(BC$BC_indices!=0))
-    {
-      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
-    else
-    {
-      BC_indices_IC = BC$BC_indices
-      BC_values_IC = BC$BC_values
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
-
     if(nrow(covariates)==0)
       covariatesIC = covariates
     else
@@ -129,7 +113,7 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
     ## call the smoothing function with initial observations to estimates the IC
     ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:NobsIC],
                   FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), covariatesIC,
-                  incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                  incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                   IC, T, as.integer(2), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
 
     ## shifting the lambdas interval if the best lambda is the smaller one and retry smoothing
@@ -140,7 +124,7 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
       storage.mode(lambdaSIC) <- "double"
       ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:NobsIC],
                     FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), covariatesIC,
-                    incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                    incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                     IC, T, as.integer(2), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
@@ -153,7 +137,7 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
         storage.mode(lambdaSIC) <- "double"
         ICsol <- .Call("regression_Laplace", locations, IC_time_locations, observations[1:NobsIC],
                       FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1), covariatesIC,
-                      incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                      incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                       IC, T, as.integer(2), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
@@ -161,18 +145,18 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
     if(nrow(covariates)!=0)
     {
       betaIC = ICsol[[5]]
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] + covariatesIC%*%betaIC[,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
+      covariates=covariates[(NobsIC+1):nrow(covariates)]
     }
     else
     {
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
       betaIC = NULL
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
     time_locations=time_locations[2:nrow(time_locations)]
     observations = observations[(NobsIC+1):length(observations)]
-    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -286,20 +270,6 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
     IC_time_locations=0
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
-    if(length(BC$BC_indices!=0))
-    {
-      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
-    else
-    {
-      BC_indices_IC = BC$BC_indices
-      BC_values_IC = BC$BC_values
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
 
     if(nrow(covariates)==0)
       covariatesIC = covariates
@@ -316,7 +286,7 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
     ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:NobsIC],
                   FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                   PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
-                  covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                  covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                   IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
 
     if((ICsol[[4]][1]+1)==1)
@@ -327,7 +297,7 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
       ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:NobsIC],
                     FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                     PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
-                    covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                    covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                     IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
@@ -340,7 +310,7 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
         ICsol <- .Call("regression_PDE", locations, IC_time_locations, observations[1:NobsIC],
                       FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                       PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c,
-                      covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                      covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                       IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
@@ -348,18 +318,18 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
     if(nrow(covariates)!=0)
     {
       betaIC = ICsol[[5]]
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] + covariatesIC%*%betaIC[,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
+      covariates=covariates[(NobsIC+1):nrow(covariates),]
     }
     else
     {
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
       betaIC = NULL
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
     time_locations=time_locations[2:nrow(time_locations)]
     observations = observations[(NobsIC+1):length(observations)]
-    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"
@@ -482,21 +452,6 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
     IC_time_locations=as.matrix(IC_time_locations)
     storage.mode(IC_time_locations)<-"double"
 
-    if(length(BC$BC_indices!=0))
-    {
-      BC_indices_IC = BC$BC_indices[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      BC_values_IC = BC$BC_values[1:length(which(FEMbasis$mesh$nodesmarkers == 1))]
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
-    else
-    {
-      BC_indices_IC = BC$BC_indices
-      BC_values_IC = BC$BC_values
-      storage.mode(BC_indices_IC)<-"integer"
-      storage.mode(BC_values_IC)<-"double"
-    }
-
     if(nrow(covariates)==0)
       covariatesIC = covariates
     else
@@ -513,7 +468,7 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
     ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:NobsIC],
                   FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                   PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
-                  covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                  covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                   IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
 
     if((ICsol[[4]][1]+1)==1)
@@ -524,7 +479,7 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
       ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:NobsIC],
                     FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                     PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
-                    covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                    covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                     IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
     }
     else
@@ -537,7 +492,7 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
         ICsol <- .Call("regression_PDE_space_varying", locations, IC_time_locations, observations[1:NobsIC],
                       FEMbasis$mesh, IC_time_locations, FEMbasis$order, mydim, ndim, lambdaSIC, as.double(1),
                       PDE_param_eval$K, PDE_param_eval$b, PDE_param_eval$c, PDE_param_eval$u,
-                      covariatesIC, incidence_matrix, BC_indices_IC, BC_values_IC, FLAG_MASS, F,
+                      covariatesIC, incidence_matrix, BC$BC_indices, BC$BC_values, FLAG_MASS, F,
                       IC, T, as.integer(1), nrealizations, DOF, DOF_matrix, PACKAGE = "fdaPDEtime")
       }
     }
@@ -545,18 +500,18 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
     if(nrow(covariates)!=0)
     {
       betaIC = ICsol[[5]]
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] + covariatesIC%*%betaIC[,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]# best IC estimation
+      covariates=covariates[(NobsIC+1):nrow(covariates),]
     }
     else
     {
-      IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] ## best IC estimation
+      IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
       betaIC = NULL
     }
     ## return a FEM object containing IC estimates with best lambda and best lambda index
-    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:FEMbasis$mesh$nnodes,],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
+    ICsol = list(IC.FEM=FEM(ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),],FEMbasis),bestlambdaindex=ICsol[[4]][1]+1,bestlambda=lambdaSIC[ICsol[[4]][1]+1],beta=betaIC)
     time_locations=time_locations[2:nrow(time_locations)]
     observations = observations[(NobsIC+1):length(observations)]
-    covariates=covariates[(NobsIC+1):nrow(covariates)]
   }
   IC <- as.matrix(IC)
   storage.mode(IC) <- "double"

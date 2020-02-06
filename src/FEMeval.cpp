@@ -506,48 +506,61 @@ SEXP eval_FEM_time_nodes(SEXP Rns, SEXP Rmesh_time, SEXP Rtime, SEXP Rcoef, SEXP
 {
 	UInt ns = INTEGER(Rns)[0];
 	UInt nt = Rf_length(Rmesh_time);
+  UInt n = Rf_length(Rtime);
 
 	Real *mesh_time = REAL(Rmesh_time);
-	Real t = REAL(Rtime)[0];
+	Real *t = REAL(Rtime);
 	bool flag_par = INTEGER(Rflag_parabolic)[0];
 
 	UInt DEGREE = flag_par ? 1 : 3;
 	UInt M = nt + DEGREE - 1;
-	VectorXr phi(M);
+	MatrixXr phi(M,n);
 
 	if(flag_par)
 	{
 		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
-		for (UInt j = 0; j < M; ++j)
+    for (UInt i=0; i < n; ++i)
+    {
+      for (UInt j = 0; j < M; ++j)
 			{
-				phi(j) = spline.BasisFunction(DEGREE, j, t);
+				phi(j,i) = spline.BasisFunction(DEGREE, j, t[i]);
 			}
+    }
 	}
 	else
 	{
 		Spline<IntegratorGaussP5,3,2>spline(mesh_time,nt);
-		for (UInt j = 0; j < M; ++j)
-			{
-				phi(j) = spline.BasisFunction(DEGREE, j, t);
-			}
+    for (UInt i=0; i < n; ++i)
+    {
+      for (UInt j = 0; j < M; ++j)
+  			{
+  				phi(j,i) = spline.BasisFunction(DEGREE, j, t[i]);
+  			}
+    }
 	}
 
 	SEXP result;
 
-	PROTECT(result=Rf_allocVector(REALSXP, ns));
+	PROTECT(result=Rf_allocVector(REALSXP, ns*n));
 
-	for(UInt k=0; k<ns; ++k)
-	{
-		REAL(result)[k] = REAL(Rcoef)[k]*phi(0);
-	}
+  for(UInt j=0; j<n; ++j)
+  {
+    for(UInt k=0; k<ns; ++k)
+  	{
+  		REAL(result)[k+j*ns] = REAL(Rcoef)[k]*phi(0,j);
+  	}
+  }
 	for(UInt i=1; i < M; i++)
 	{
-    if(phi(i)!=0)
-		{
-      for(UInt k=0; k<ns; ++k)
+    for(UInt j=0; j<n; ++j)
+    {
+      if(phi(i,j)!=0)
   		{
-  			REAL(result)[k] = REAL(result)[k] + REAL(Rcoef)[k+ns*i]*phi(i);
-  		}
+        for(UInt k=0; k<ns; ++k)
+    		{
+    			REAL(result)[k+j*ns] = REAL(result)[k+j*ns] + REAL(Rcoef)[k+ns*i]*phi(i,j);
+    		}
+      }
     }
 	}
 
