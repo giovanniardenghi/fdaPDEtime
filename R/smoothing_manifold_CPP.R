@@ -82,6 +82,8 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
   storage.mode(BC$BC_values)  <- "double"
   GCV <- as.integer(GCV)
   storage.mode(GCV) <- "integer"
+  DOF <- as.integer(DOF)
+  storage.mode(DOF) <- "integer"
 
   FLAG_MASS <- as.integer(FLAG_MASS)
   storage.mode(FLAG_MASS) <-"integer"
@@ -151,6 +153,7 @@ CPP_smooth.manifold.FEM.time<-function(locations, time_locations, observations, 
       betaIC = ICsol[[5]]
       IC = ICsol[[1]][1:FEMbasis$mesh$nnodes,ICsol[[4]][1]+1] ## best IC estimation
       covariates=covariates[(NobsIC+1):nrow(covariates),]
+      covariates <- as.matrix(covariates)
     }
     else
     {
