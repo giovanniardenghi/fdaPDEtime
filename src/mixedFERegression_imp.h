@@ -351,104 +351,196 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 
 	if(regressionData_.getCovariates().rows() == 0)
 	{
-		SpMat X;
-		SpMat BBsmall(M_*N_,M_*N_);
-
-		if(regressionData_.getNumberOfRegions()==0)
-			BBsmall = B_.transpose()*B_;
-		else
-			BBsmall = B_.transpose()*Ak_*B_;
-
-		SpMat BB(2*M_*N_,2*M_*N_);
-
-		std::vector<coeff> tripletAll;
-		tripletAll.reserve(BBsmall.nonZeros());
-
-		for (int k=0; k<BBsmall.outerSize(); ++k)
-			for (SpMat::InnerIterator it(BBsmall,k); it; ++it)
-			{
-				tripletAll.push_back(coeff(it.row(), it.col(),it.value()));
-			}
-
-		BB.setFromTriplets(tripletAll.begin(),tripletAll.end());
-		BB.makeCompressed();
-
-//! Use MUMPS to invert only the selected entries of matrixNoCov_
-		std::vector<int> irn;
-		std::vector<int> jcn;
-		std::vector<double> a;
-
-		for (int j=0; j<matrixNoCov_.outerSize(); ++j)
+		if(regressionData_.getFlagParabolic() && regressionData_.isLocationsByNodes())
 		{
-			for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
-			{
-				if(it.col()>=it.row())
-				{
-					irn.push_back(it.row()+1);
-					jcn.push_back(it.col()+1);
-					a.push_back(it.value());
+			UInt nnodes =N_*M_;
+			UInt nlocations = regressionData_.getObservationsIndices().size();
+
+			auto k = regressionData_.getObservationsIndices();
+			DMUMPS_STRUC_C id;
+			//int myid, ierr;
+		      //int argc=0;
+		      //char ** argv= NULL;
+		      //MPI_Init(&argc,&argv);
+			//ierr = MPI_Comm_rank(MPI_COMM_WORLD, &myid);
+
+			id.sym=2;
+			id.par=1;
+			id.job=JOB_INIT;
+			id.comm_fortran=USE_COMM_WORLD;
+			dmumps_c(&id);
+			std::vector<int> irn;
+			std::vector<int> jcn;
+			std::vector<double> a;
+			std::vector<int> irhs_ptr;
+			std::vector<int> irhs_sparse;
+			double* rhs_sparse= (double*)malloc(nlocations*sizeof(double));
+			//if( myid==0){
+				id.n=2*nnodes;
+				for (int j=0; j<matrixNoCov_.outerSize(); ++j){
+					for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
+					{
+						if(it.col()>=it.row())
+						{
+							irn.push_back(it.row()+1);
+							jcn.push_back(it.col()+1);
+							a.push_back(it.value());
+						}
+					}
+				}
+			//}
+			id.nz=irn.size();
+			id.irn=irn.data();
+			id.jcn=jcn.data();
+			id.a=a.data();
+			id.nz_rhs=nlocations;
+			id.nrhs=2*nnodes;
+			int j = 1;
+			irhs_ptr.push_back(j);
+			for (int l=0; l<k[0]-1; ++l) {
+				irhs_ptr.push_back(j);
+			}
+			for (int i=0; i<k.size()-1; ++i) {
+				++j;
+				for (int l=0; l<k[i+1]-k[i]; ++l) {
+					irhs_ptr.push_back(j);
 				}
 			}
+			++j;
+			for (int i=k[k.size()-1]; i < id.nrhs; ++i) {
+				irhs_ptr.push_back(j);
+			}
+			for (int i=0; i<nlocations; ++i){
+				irhs_sparse.push_back(k[i]+1);
+			}
+			id.irhs_sparse=irhs_sparse.data();
+			id.irhs_ptr=irhs_ptr.data();
+			id.rhs_sparse=rhs_sparse;
+			#define ICNTL(I) icntl[(I)-1]
+			//Output messages suppressed
+			id.ICNTL(1)=-1;
+			id.ICNTL(2)=-1;
+			id.ICNTL(3)=-1;
+			id.ICNTL(4)=0;
+			id.ICNTL(20)=1;
+			id.ICNTL(30)=1;
+			id.ICNTL(14)=200;
+			id.job=6;
+			dmumps_c(&id);
+			id.job=JOB_END;
+			dmumps_c(&id);
+			//if (myid==0){
+				for (int i=0; i< nlocations; ++i){
+					//std::cout << "rhs_sparse" << rhs_sparse[i] << std::endl;
+					degrees+=rhs_sparse[i];
+				}
+			//}
+			free(rhs_sparse);
+			//MPI_Finalize();
 		}
-
-		DMUMPS_STRUC_C id;
-
-		UInt nz_rhs = BB.nonZeros();
-		UInt *innerBB = BB.innerIndexPtr();
-		UInt *outerBB = BB.outerIndexPtr();
-
-		UInt irhs_sparse[nz_rhs];
-
-		for(UInt i=0; i<nz_rhs; ++i)
+		else
 		{
-			irhs_sparse[i]=innerBB[i]+1;
+			SpMat X;
+			SpMat BBsmall(M_*N_,M_*N_);
+
+			if(regressionData_.getNumberOfRegions()==0)
+				BBsmall = B_.transpose()*B_;
+			else
+				BBsmall = B_.transpose()*Ak_*B_;
+
+			SpMat BB(2*M_*N_,2*M_*N_);
+
+			std::vector<coeff> tripletAll;
+			tripletAll.reserve(BBsmall.nonZeros());
+
+			for (int k=0; k<BBsmall.outerSize(); ++k)
+				for (SpMat::InnerIterator it(BBsmall,k); it; ++it)
+				{
+					tripletAll.push_back(coeff(it.row(), it.col(),it.value()));
+				}
+
+			BB.setFromTriplets(tripletAll.begin(),tripletAll.end());
+			BB.makeCompressed();
+
+	//! Use MUMPS to invert only the selected entries of matrixNoCov_
+			std::vector<int> irn;
+			std::vector<int> jcn;
+			std::vector<double> a;
+
+			for (int j=0; j<matrixNoCov_.outerSize(); ++j)
+			{
+				for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
+				{
+					if(it.col()>=it.row())
+					{
+						irn.push_back(it.row()+1);
+						jcn.push_back(it.col()+1);
+						a.push_back(it.value());
+					}
+				}
+			}
+
+			DMUMPS_STRUC_C id;
+
+			UInt nz_rhs = BB.nonZeros();
+			UInt *innerBB = BB.innerIndexPtr();
+			UInt *outerBB = BB.outerIndexPtr();
+
+			UInt irhs_sparse[nz_rhs];
+
+			for(UInt i=0; i<nz_rhs; ++i)
+			{
+				irhs_sparse[i]=innerBB[i]+1;
+			}
+
+			UInt irhs_ptr[BB.cols()+1];
+
+			for(UInt i=0; i<BB.cols()+1; ++i)
+			{
+				irhs_ptr[i]=outerBB[i]+1;
+			}
+
+			Real rhs_sparse[nz_rhs];
+
+			// Initialize a MUMPS instance. Use MPI_COMM_WORLD
+			id.job=JOB_INIT; id.par=1; id.sym=2;id.comm_fortran=USE_COMM_WORLD;
+			dmumps_c(&id);
+
+			//Define the problem on the host
+			id.n = BB.cols(); id.nz = irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
+			id.a = a.data();
+			id.nz_rhs = nz_rhs; id.nrhs = BB.cols();
+			id.rhs_sparse = rhs_sparse;
+			id.irhs_sparse = irhs_sparse;
+			id.irhs_ptr = irhs_ptr;
+
+			#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+			/* No outputs */
+			id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+			id.ICNTL(14)=200;
+			id.ICNTL(20)=1; id.ICNTL(30)=1;
+
+			/* Call the MUMPS package. */
+			id.job=6;
+			dmumps_c(&id);
+
+			/* Terminate instance */
+			id.job=JOB_END; dmumps_c(&id);
+
+			SpMat BBPinv = BB;
+
+			Real *valueBBPinv = BBPinv.valuePtr();
+
+			for(UInt i = 0; i < nz_rhs; ++i)
+				valueBBPinv[i] = rhs_sparse[i];
+
+			X = BBPinv*BB;
+			for (int i = 0; i<M_*N_; ++i)
+			{
+				degrees += X.coeff(i,i);
+			}
 		}
 
-		UInt irhs_ptr[BB.cols()+1];
-
-		for(UInt i=0; i<BB.cols()+1; ++i)
-		{
-			irhs_ptr[i]=outerBB[i]+1;
-		}
-
-		Real rhs_sparse[nz_rhs];
-
-		// Initialize a MUMPS instance. Use MPI_COMM_WORLD
-		id.job=JOB_INIT; id.par=1; id.sym=2;id.comm_fortran=USE_COMM_WORLD;
-		dmumps_c(&id);
-
-		//Define the problem on the host
-		id.n = BB.cols(); id.nz = irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
-		id.a = a.data();
-		id.nz_rhs = nz_rhs; id.nrhs = BB.cols();
-		id.rhs_sparse = rhs_sparse;
-		id.irhs_sparse = irhs_sparse;
-		id.irhs_ptr = irhs_ptr;
-
-		#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-		/* No outputs */
-		id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-		id.ICNTL(14)=200;
-		id.ICNTL(20)=1; id.ICNTL(30)=1;
-
-		/* Call the MUMPS package. */
-		id.job=6;
-		dmumps_c(&id);
-
-		/* Terminate instance */
-		id.job=JOB_END; dmumps_c(&id);
-
-		SpMat BBPinv = BB;
-
-		Real *valueBBPinv = BBPinv.valuePtr();
-
-		for(UInt i = 0; i < nz_rhs; ++i)
-			valueBBPinv[i] = rhs_sparse[i];
-
-		X = BBPinv*BB;
-		for (int i = 0; i<M_*N_; ++i) {
-			degrees += X.coeff(i,i);
-		}
 	}
 	else //! case with covariates
 	{
