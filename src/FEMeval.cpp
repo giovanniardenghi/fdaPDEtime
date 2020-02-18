@@ -355,7 +355,7 @@ SEXP eval_FEM_time(SEXP Rmesh, SEXP Rmesh_time, SEXP Rlocations, SEXP Rtime_loca
 	UInt DEGREE = flag_par ? 1 : 3;
 	UInt M = nt + DEGREE - 1;
 	SpMat phi(n,M);
-  UInt N = nRegions==0 ? n : nRegions;
+  UInt N = INTEGER(Rf_getAttrib(Rtime_locations,R_DimSymbol))[0];
 	if(flag_par)
 	{
 		Spline<IntegratorGaussP5,1,0>spline(mesh_time,nt);
