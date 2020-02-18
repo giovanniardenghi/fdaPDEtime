@@ -34,6 +34,42 @@ plot.FEM.time = function(x,t,lambdaS=1,lambdaT=1)
 }
 
 
+image.FEM.time = function(x,t,lambdaS=1,lambdaT=1)
+{
+  t <- as.matrix(t)
+  if(class(x) != 'FEM.time')
+    stop("x is not of class 'FEM.time'")
+  if(is.null(t))
+    stop("time required; is NULL")
+  if(ncol(t)>1)
+    stop("t must be a column vector")
+  if(min(t)<x$mesh_time[1] || max(t)>x$mesh_time[length(x$mesh_time)])
+    stop("time provided out of the 'time_mesh'")
+  if(dim(x$coeff)[2]>1 && lambdaS==1)
+    warning("the first value of lambdaS is being used")
+  if(dim(x$coeff)[3]>1 && lambdaT==1)
+    warning("the first value of lambdaT is being used")
+  if(class(x$FEMbasis$mesh)=="mesh.2D")
+    N = nrow(x$FEMbasis$mesh$nodes)
+  else
+    N = x$FEMbasis$mesh$nnodes
+
+  t <- as.vector(t)
+  storage.mode(t) <- "double"
+  storage.mode(N) <- "integer"
+  storage.mode(x$mesh_time) <- "double"
+  storage.mode(x$coeff) <- "double"
+  storage.mode(x$FLAG_PARABOLIC) <- "integer"
+
+  solution <- .Call("eval_FEM_time_nodes",N,x$mesh_time,t,x$coeff[,lambdaS,lambdaT],x$FLAG_PARABOLIC,package = "fdaPDEtime")
+  for(i in 1:length(t))
+  {
+    plot = FEM(solution[(1+(i-1)*N):(N+(i-1)*N)],x$FEMbasis)
+    image.FEM(plot)
+  }
+}
+
+
 #' Plot a \code{FEM} object
 #'
 #' @param x A \code{FEM} object.
