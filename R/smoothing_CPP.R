@@ -147,6 +147,7 @@ CPP_smooth.FEM.time<-function(locations, time_locations, observations, FEMbasis,
       betaIC = ICsol[[5]]
       IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
       covariates=covariates[(NobsIC+1):nrow(covariates)]
+      covariates <- as.matrix(covariates)
     }
     else
     {
@@ -320,6 +321,7 @@ CPP_smooth.FEM.PDE.time<-function(locations, time_locations, observations, FEMba
       betaIC = ICsol[[5]]
       IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1] ## best IC estimation
       covariates=covariates[(NobsIC+1):nrow(covariates),]
+      covariates <- as.matrix(covariates)
     }
     else
     {
@@ -502,6 +504,7 @@ CPP_smooth.FEM.PDE.sv.time<-function(locations, time_locations, observations, FE
       betaIC = ICsol[[5]]
       IC = ICsol[[1]][1:nrow(FEMbasis$mesh$nodes),ICsol[[4]][1]+1]# best IC estimation
       covariates=covariates[(NobsIC+1):nrow(covariates),]
+      covariates <- as.matrix(covariates)
     }
     else
     {

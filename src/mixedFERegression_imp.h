@@ -67,8 +67,8 @@ void MixedFERegressionBase<InputHandler,Integrator,ORDER, mydim, ndim>::setPsi()
 	psi_.resize(nlocations, nnodes);
 	if (regressionData_.isLocationsByNodes()) //If the observations are located on the mesh nodes set psi as the identity matrix
 	{
-		psi_.resize(nnodes,nnodes);
-		psi_.setIdentity();
+		for(UInt i=0; i<nlocations; i++)
+			psi_.coeffRef(i,i)=1;
 	}
 	else if (regressionData_.getNumberOfRegions() == 0) //! Pointwise data
 	{
@@ -194,7 +194,7 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	UInt nnodes = M_*N_;
 
 	// First phase: Factorization of matrixNoCov
-	// matrixNoCovdec_.compute(matrixNoCov_);
+	matrixNoCovdec_.compute(matrixNoCov_);
 
 	if (regressionData_.getCovariates().rows() != 0)
 	{
@@ -234,9 +234,9 @@ template<typename Derived>
 MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, SPLINE_DEGREE, ORDER_DERIVATIVE, mydim, ndim>::system_solve(const Eigen::MatrixBase<Derived> &b) {
 
 	// Resolution of the system matrixNoCov * x1 = b
-	// MatrixXr x1 = matrixNoCovdec_.solve(b);
-	MatrixXr x1(b.rows(),b.cols());
-	Mumps::template solve(matrixNoCov_,b,x1);
+	MatrixXr x1 = matrixNoCovdec_.solve(b);
+	// MatrixXr x1(b.rows(),b.cols());
+	// Mumps::template solve(matrixNoCov_,b,x1);
 
 	if (regressionData_.getCovariates().rows() != 0)
 	{
@@ -245,10 +245,10 @@ MatrixXr SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTim
 		MatrixXr x2 = Gdec_.solve(V_*x1);
 
 		// Resolution of the system matrixNoCov * x3 = U * x2
-		MatrixXr xtemp(b.rows(),b.cols());
-		Mumps::template solve(matrixNoCov_,U_*x2,xtemp);
-		x1 -= xtemp;
-		// x1 -= matrixNoCovdec_.solve(U_*x2);
+		// MatrixXr xtemp(b.rows(),b.cols());
+		// Mumps::template solve(matrixNoCov_,U_*x2,xtemp);
+		// x1 -= xtemp;
+		x1 -= matrixNoCovdec_.solve(U_*x2);
 	}
 	return x1;
 }
@@ -514,11 +514,11 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 			id.irhs_sparse = irhs_sparse;
 			id.irhs_ptr = irhs_ptr;
 
-			#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-			/* No outputs */
-			id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-			id.ICNTL(14)=200;
-			id.ICNTL(20)=1; id.ICNTL(30)=1;
+		#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+		/* No outputs */
+		id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+		id.ICNTL(14)=1000;
+		id.ICNTL(20)=1; id.ICNTL(30)=1;
 
 			/* Call the MUMPS package. */
 			id.job=6;
@@ -627,63 +627,63 @@ void SpaceTimeRegression<InputHandler, IntegratorSpace, ORDER, IntegratorTime, S
 	// Resolution of the system
 	// system_factorize();
 
-	// MatrixXr x = system_solve(b);
+	MatrixXr x = system_solve(b);
 
-	std::vector<int> irn;
-	std::vector<int> jcn;
-	std::vector<double> a;
-
-	for (int j=0; j<matrixNoCov_.outerSize(); ++j)
-	{
-		for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
-		{
-			if(it.col()>=it.row())
-			{
-				irn.push_back(it.row()+1);
-				jcn.push_back(it.col()+1);
-				a.push_back(it.value());
-			}
-		}
-	}
-
-	DMUMPS_STRUC_C id;
-
-
-	UInt nrhs = b.cols();
-	UInt lrhs = b.rows();
-
-	Real* rhs = b.data();
-
-	// Initialize a MUMPS instance. Use MPI_COMM_WORLD
-	id.job=JOB_INIT; id.par=1; id.sym=2;id.comm_fortran=USE_COMM_WORLD;
-	dmumps_c(&id);
-
-	//Define the problem on the host
-	id.n = b.rows(); id.nz =irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
-	id.a = a.data();
-	id.lrhs = lrhs; id.nrhs = nrhs;
-	id.rhs = rhs;
-
-	#define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
-	/* No outputs */
-	id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
-	id.ICNTL(14)=1000;
-	id.ICNTL(20)=0;
-
-	/* Call the MUMPS package. */
-	id.job=6;
-	dmumps_c(&id);
-
-	/* Terminate instance */
-	id.job=JOB_END; dmumps_c(&id);
-
-	//std::cout<<"delete ok"<<std::endl;
-
-	MatrixXr x(b.rows(),b.cols());
-
-	for(UInt j = 0; j < nrhs; ++j)
-		for(UInt i = 0; i < lrhs; ++i)
-			x(i,j) = rhs[i+j*lrhs];
+	// std::vector<int> irn;
+	// std::vector<int> jcn;
+	// std::vector<double> a;
+	//
+	// for (int j=0; j<matrixNoCov_.outerSize(); ++j)
+	// {
+	// 	for (SpMat::InnerIterator it(matrixNoCov_,j); it; ++it)
+	// 	{
+	// 		if(it.col()>=it.row())
+	// 		{
+	// 			irn.push_back(it.row()+1);
+	// 			jcn.push_back(it.col()+1);
+	// 			a.push_back(it.value());
+	// 		}
+	// 	}
+	// }
+	//
+	// DMUMPS_STRUC_C id;
+	//
+	//
+	// UInt nrhs = b.cols();
+	// UInt lrhs = b.rows();
+	//
+	// Real* rhs = b.data();
+	//
+	// // Initialize a MUMPS instance. Use MPI_COMM_WORLD
+	// id.job=JOB_INIT; id.par=1; id.sym=2;id.comm_fortran=USE_COMM_WORLD;
+	// dmumps_c(&id);
+	//
+	// //Define the problem on the host
+	// id.n = b.rows(); id.nz =irn.size(); id.irn=irn.data(); id.jcn=jcn.data();
+	// id.a = a.data();
+	// id.lrhs = lrhs; id.nrhs = nrhs;
+	// id.rhs = rhs;
+	//
+	// #define ICNTL(I) icntl[(I)-1] /* macro s.t. indices match documentation */
+	// /* No outputs */
+	// id.ICNTL(1)=-1; id.ICNTL(2)=-1; id.ICNTL(3)=-1; id.ICNTL(4)=0;
+	// id.ICNTL(14)=1000;
+	// id.ICNTL(20)=0;
+	//
+	// /* Call the MUMPS package. */
+	// id.job=6;
+	// dmumps_c(&id);
+	//
+	// /* Terminate instance */
+	// id.job=JOB_END; dmumps_c(&id);
+	//
+	// //std::cout<<"delete ok"<<std::endl;
+	//
+	// MatrixXr x(b.rows(),b.cols());
+	//
+	// for(UInt j = 0; j < nrhs; ++j)
+	// 	for(UInt i = 0; i < lrhs; ++i)
+	// 		x(i,j) = rhs[i+j*lrhs];
 
 	MatrixXr uTB = u.transpose()*B_;
 	VectorXr edf_vect(nrealizations);
